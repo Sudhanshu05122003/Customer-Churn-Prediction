@@ -62,5 +62,37 @@ export const churnApi = {
       body: formData,
       headers,
     }).then(res => res.json());
+  },
+  analyzeColumns: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('analyze_only', 'true');
+    
+    const token = localStorage.getItem('token');
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    return fetch(`${API_BASE}/train`, {
+      method: 'POST',
+      body: formData,
+      headers,
+    }).then(res => res.json());
+  },
+  trainModel: (file, featureCols, targetCol) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('feature_cols', featureCols.join(','));
+    formData.append('target_col', targetCol);
+    
+    const token = localStorage.getItem('token');
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    return fetch(`${API_BASE}/train`, {
+      method: 'POST',
+      body: formData,
+      headers,
+    }).then(res => res.json());
   }
 };
+

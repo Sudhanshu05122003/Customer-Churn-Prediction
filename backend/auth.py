@@ -26,11 +26,14 @@ JWT_EXPIRY_HOURS = Config.JWT_ACCESS_TOKEN_EXPIRES_HOURS
 def init_auth_db():
     """Create users table if it doesn't exist."""
     conn = sqlite3.connect(DB_PATH)
+    # Drop existing table to apply schema change if needed
+    conn.execute("DROP TABLE IF EXISTS users_old") # just in case
+    
     conn.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
             username    TEXT    NOT NULL UNIQUE,
-            email       TEXT    NOT NULL UNIQUE,
+            email       TEXT    NOT NULL,
             password    TEXT    NOT NULL,
             salt        TEXT    NOT NULL,
             organization TEXT,
@@ -38,6 +41,7 @@ def init_auth_db():
             is_active   INTEGER DEFAULT 1
         )
     """)
+
     conn.commit()
     conn.close()
 
@@ -128,12 +132,9 @@ def register_user(username: str, email: str, password: str, organization: str = 
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
 
-    # Check existing
-    existing = conn.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
-    if existing:
-        conn.close()
-        return None, "Email already registered"
-
+    # We NO LONGER check for existing email
+    
+    # Still check for unique username as it's the primary identifier
     existing = conn.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
     if existing:
         conn.close()
@@ -141,31 +142,35 @@ def register_user(username: str, email: str, password: str, organization: str = 
 
     hashed, salt = hash_password(password)
 
-    conn.execute(
+    cursor = conn.execute(
         """INSERT INTO users (username, email, password, salt, organization, created_at)
            VALUES (?, ?, ?, ?, ?, ?)""",
         (username, email, hashed, salt, organization, datetime.now(timezone.utc).isoformat()),
     )
+    new_id = cursor.lastrowid
     conn.commit()
 
-    user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+    user = conn.execute("SELECT * FROM users WHERE id = ?", (new_id,)).fetchone()
     conn.close()
 
     return dict(user), None
 
 
 def authenticate_user(email: str, password: str):
-    """Authenticate user credentials. Returns (user_dict, error_string)."""
+    """Authenticate user credentials. Checks all accounts with this email."""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
 
-    user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+    # Fetch ALL users with this email
+    users = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchall()
     conn.close()
 
-    if not user:
+    if not users:
         return None, "Invalid email or password"
 
-    if not verify_password(password, user["password"], user["salt"]):
-        return None, "Invalid email or password"
+    # Try to find a matching password among all users with this email
+    for user in users:
+        if verify_password(password, user["password"], user["salt"]):
+            return dict(user), None
 
-    return dict(user), None
+    return None, "Invalid email or password"

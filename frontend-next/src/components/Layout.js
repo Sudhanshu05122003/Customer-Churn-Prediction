@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Zap, History, Upload, LogOut, User } from 'lucide-react';
+import { LayoutDashboard, Zap, History, Upload, LogOut, User, Brain, Sun, Moon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const NavItem = ({ href, icon: Icon, label, active }) => (
@@ -20,11 +20,24 @@ const NavItem = ({ href, icon: Icon, label, active }) => (
 export default function AppLayout({ children }) {
   const pathname = usePathname();
   const [user, setUser] = useState(null);
+  const [theme, setTheme] = useState('dark');
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) setUser(JSON.parse(storedUser));
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    setTheme(savedTheme);
+    document.documentElement.setAttribute('data-theme', savedTheme);
   }, []);
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    localStorage.setItem('theme', next);
+    document.documentElement.setAttribute('data-theme', next);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -32,7 +45,9 @@ export default function AppLayout({ children }) {
     window.location.href = '/login';
   };
 
-  if (pathname === '/login' || pathname === '/register') return children;
+  if (['/', '/login', '/register'].includes(pathname)) {
+    return <main className="w-full min-h-screen">{children}</main>;
+  }
 
   return (
     <div className="flex min-h-screen">
@@ -46,13 +61,24 @@ export default function AppLayout({ children }) {
         </div>
 
         <nav className="flex flex-col gap-2 flex-1">
-          <NavItem href="/" icon={LayoutDashboard} label="Dashboard" active={pathname === '/'} />
+          <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" active={pathname === '/dashboard'} />
           <NavItem href="/predict" icon={Zap} label="Predict" active={pathname === '/predict'} />
+          <NavItem href="/train" icon={Brain} label="Train Model" active={pathname === '/train'} />
           <NavItem href="/bulk" icon={Upload} label="Bulk Analysis" active={pathname === '/bulk'} />
           <NavItem href="/history" icon={History} label="History" active={pathname === '/history'} />
         </nav>
 
         <div className="pt-6 border-t border-slate-800/50 flex flex-col gap-4">
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800/40 transition-all duration-200"
+            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            <span className="font-medium">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+          </button>
+
           {user && (
             <div className="flex items-center gap-3 px-2">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold">

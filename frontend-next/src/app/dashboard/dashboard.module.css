@@ -1,0 +1,49 @@
+.page { max-width: 1300px; margin: 0 auto; padding: 40px 24px; min-height: 100vh; }
+.header { margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-end; }
+.heading { font-size: 2rem; font-weight: 800; margin-bottom: 4px; color: var(--text-primary); }
+.subheading { color: var(--text-secondary); font-size: 0.95rem; }
+
+/* Bento Grid Stats */
+.statsGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 32px; }
+@media (max-width: 1024px) { .statsGrid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .statsGrid { grid-template-columns: 1fr; } }
+
+.statCard { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 24px; display: flex; align-items: center; gap: 16px; transition: all 0.3s ease; }
+.statCard:hover { border-color: var(--card-hover-border); transform: translateY(-4px); }
+.statIconWrap { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+.statInfo { display: flex; flex-direction: column; }
+.statLabel { font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.statValue { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+
+/* Charts Layout */
+.chartsGrid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px; }
+@media (max-width: 1100px) { .chartsGrid { grid-template-columns: 1fr; } }
+
+.chartCard { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 24px; padding: 24px; }
+.chartHeader { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; color: var(--text-primary); }
+.chartHeader h3 { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+
+.legendWrap { margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
+.legendItem { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; color: var(--text-secondary); }
+.legendDot { width: 10px; height: 10px; border-radius: 50%; }
+.legendCount { margin-left: auto; color: var(--text-primary); font-weight: 600; }
+
+/* Model Health & Alerts */
+.secondaryGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 800px) { .secondaryGrid { grid-template-columns: 1fr; } }
+
+.healthIndicator { display: flex; align-items: center; gap: 8px; color: var(--success); font-size: 0.8rem; font-weight: 600; background: var(--success-bg); padding: 4px 12px; border-radius: 99px; }
+
+.alertList { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+.alertItem { background: var(--danger-bg); border: 1px solid rgba(239, 68, 68, 0.1); padding: 12px 16px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
+.alertText { font-size: 0.85rem; color: var(--danger-text); }
+.alertTime { font-size: 0.75rem; color: var(--text-muted); }
+
+.emptyState { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 12px; color: var(--text-muted); text-align: center; }
+.emptyState h2 { color: var(--text-primary); }
+
+.loadingWrap { height: 80vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; color: var(--text-secondary); }
+.pulse { width: 48px; height: 48px; background: var(--primary); border-radius: 50%; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0% { transform: scale(0.9); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.5; } }
+
+.noData { color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 40px 0; }

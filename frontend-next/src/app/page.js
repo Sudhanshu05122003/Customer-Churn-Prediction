@@ -1,178 +1,133 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { churnApi } from '@/lib/api';
-import { TrendingUp, Users, AlertTriangle, ShieldCheck, Activity, BarChart3 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, CartesianGrid } from 'recharts';
-import styles from './dashboard.module.css';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Brain, Zap, ShieldCheck, BarChart3, ChevronRight, Users, Activity, Sun, Moon } from 'lucide-react';
+import styles from './landing.module.css';
 
-const RISK_COLORS = {
-  Critical: '#ef4444',
-  High: '#f59e0b',
-  Medium: '#6366f1',
-  Low: '#10b981',
-};
-
-const STAT_ICONS = {
-  total: Users,
-  churn: AlertTriangle,
-  stay: ShieldCheck,
-  rate: TrendingUp,
-};
-
-export default function DashboardPage() {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
+export default function LandingPage() {
+  const [theme, setTheme] = useState('dark');
 
   useEffect(() => {
-    churnApi.getStats()
-      .then(setStats)
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    const saved = localStorage.getItem('theme') || 'dark';
+    setTheme(saved);
+    document.documentElement.setAttribute('data-theme', saved);
   }, []);
 
-  if (loading) {
-    return (
-      <div className={styles.loadingWrap}>
-        <div className={styles.pulse} />
-        <p>Loading dashboard…</p>
-      </div>
-    );
-  }
-
-  if (!stats) {
-    return (
-      <div className={styles.emptyState}>
-        <Activity size={48} strokeWidth={1.5} />
-        <h2>No Data Yet</h2>
-        <p>Make some predictions to populate the dashboard.</p>
-      </div>
-    );
-  }
-
-  const statCards = [
-    { key: 'total', label: 'Total Predictions', value: stats.total_predictions, icon: 'total', color: '#6366f1' },
-    { key: 'churn', label: 'Churn Detected', value: stats.churn_count, icon: 'churn', color: '#ef4444' },
-    { key: 'stay', label: 'Retained', value: stats.stay_count, icon: 'stay', color: '#10b981' },
-    { key: 'rate', label: 'Churn Rate', value: `${stats.churn_pct}%`, icon: 'rate', color: '#f59e0b' },
-  ];
-
-  const trendData = (stats.trend || []).reverse().map(t => ({
-    date: t.date?.slice(5) || '',
-    Churns: t.churns,
-    Retained: t.stays,
-  }));
-
-  const riskData = (stats.risk_distribution || []).map(r => ({
-    name: r.risk_level,
-    value: r.count,
-    fill: RISK_COLORS[r.risk_level] || '#6366f1',
-  }));
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    localStorage.setItem('theme', next);
+    document.documentElement.setAttribute('data-theme', next);
+  };
 
   return (
     <div className={styles.page}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.heading}>Dashboard</h1>
-          <p className={styles.subheading}>Customer churn analytics overview</p>
-        </div>
-      </div>
+      {/* Floating theme toggle */}
+      <button
+        onClick={toggleTheme}
+        style={{
+          position: 'fixed', top: 24, right: 24, zIndex: 100,
+          background: 'var(--card-bg)', border: '1px solid var(--card-border)',
+          borderRadius: '50%', width: 44, height: 44,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', color: 'var(--text-primary)',
+          backdropFilter: 'blur(12px)', boxShadow: 'var(--glass-shadow)',
+          transition: 'all 0.2s ease',
+        }}
+        title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+      >
+        {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+      </button>
 
-      {/* Stat Cards — Bento Grid */}
-      <div className={styles.statsGrid}>
-        {statCards.map((card) => {
-          const Icon = STAT_ICONS[card.icon];
-          return (
-            <div key={card.key} className={styles.statCard}>
-              <div className={styles.statIconWrap} style={{ background: `${card.color}18` }}>
-                <Icon size={22} style={{ color: card.color }} />
-              </div>
-              <div className={styles.statInfo}>
-                <span className={styles.statLabel}>{card.label}</span>
-                <span className={styles.statValue}>{card.value}</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Charts Row */}
-      <div className={styles.chartsGrid}>
-        {/* Trend Chart */}
-        <div className={`${styles.chartCard} ${styles.chartWide}`}>
-          <div className={styles.chartHeader}>
-            <BarChart3 size={20} />
-            <h3>7-Day Trend</h3>
-          </div>
-          {trendData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={260}>
-              <AreaChart data={trendData}>
-                <defs>
-                  <linearGradient id="gradChurn" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="gradRetain" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip
-                  contentStyle={{ background: 'rgba(15,23,42,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff' }}
-                />
-                <Area type="monotone" dataKey="Churns" stroke="#ef4444" fillOpacity={1} fill="url(#gradChurn)" strokeWidth={2} />
-                <Area type="monotone" dataKey="Retained" stroke="#10b981" fillOpacity={1} fill="url(#gradRetain)" strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className={styles.noData}>Not enough data for trend chart.</p>
-          )}
+      <header className={styles.hero}>
+        <div className={styles.heroGlow} />
+        
+        <div className={styles.badge}>Next-Gen AI Churn Prediction</div>
+        
+        <h1 className={styles.title}>
+          Stop Customer Churn <br />
+          Before It Happens
+        </h1>
+        
+        <p className={styles.subtitle}>
+          Leverage enterprise-grade Machine Learning and SHAP explainability to understand exactly why customers leave and how to keep them.
+        </p>
+        
+        <div className={styles.ctaGroup}>
+          <Link href="/register" className="btn-primary" style={{ padding: '16px 32px', fontSize: '1.1rem' }}>
+            Get Started for Free <ChevronRight size={20} />
+          </Link>
+          <Link href="/login" className={styles.loginBtn}>
+            Login to Dashboard
+          </Link>
         </div>
 
-        {/* Risk Distribution Pie */}
-        <div className={styles.chartCard}>
-          <div className={styles.chartHeader}>
-            <AlertTriangle size={20} />
-            <h3>Risk Distribution</h3>
+        <div className={styles.heroImageContainer}>
+          <Image 
+            src="/hero.png" 
+            alt="ChurnSense Analytics" 
+            width={1000} 
+            height={500} 
+            className={styles.heroImage}
+            priority
+          />
+        </div>
+      </header>
+
+      <section className={styles.features}>
+        <h2 className={styles.sectionTitle}>Built for Data-Driven Teams</h2>
+        <div className={styles.featureGrid}>
+          <div className={styles.featureCard}>
+            <div className={styles.iconWrap}><Brain size={24} /></div>
+            <h3 className={styles.featureName}>Custom ML Models</h3>
+            <p className={styles.featureText}>
+              Upload your own data and train custom Random Forest engines tailored to your specific industry and customer behavior.
+            </p>
           </div>
-          {riskData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={260}>
-              <PieChart>
-                <Pie
-                  data={riskData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={95}
-                  paddingAngle={4}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {riskData.map((entry, i) => (
-                    <Cell key={i} fill={entry.fill} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{ background: 'rgba(15,23,42,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className={styles.noData}>No risk data available.</p>
-          )}
-          <div className={styles.legendWrap}>
-            {riskData.map((r) => (
-              <div key={r.name} className={styles.legendItem}>
-                <span className={styles.legendDot} style={{ background: r.fill }} />
-                <span>{r.name}</span>
-                <span className={styles.legendCount}>{r.value}</span>
-              </div>
-            ))}
+
+          <div className={styles.featureCard}>
+            <div className={styles.iconWrap}><Zap size={24} /></div>
+            <h3 className={styles.featureName}>SHAP Explainability</h3>
+            <p className={styles.featureText}>
+              Don't just predict—understand. Get clear visual explanations for every single prediction so you know exactly what drove the risk.
+            </p>
+          </div>
+
+          <div className={styles.featureCard}>
+            <div className={styles.iconWrap}><Activity size={24} /></div>
+            <h3 className={styles.featureName}>Real-time Monitoring</h3>
+            <p className={styles.featureText}>
+              Monitor customer risk levels in real-time and get automated alerts when high-value accounts cross your safety thresholds.
+            </p>
           </div>
         </div>
-      </div>
+      </section>
+
+      <section className={styles.statsSection}>
+        <div className={styles.featureGrid} style={{ maxWidth: '900px', margin: '0 auto' }}>
+          <div style={{ padding: '20px' }}>
+            <h4 className={styles.statNumber}>98%</h4>
+            <p className={styles.statLabel}>Prediction Accuracy</p>
+          </div>
+          <div style={{ padding: '20px' }}>
+            <h4 className={styles.statNumber}>10k+</h4>
+            <p className={styles.statLabel}>Customers Analyzed</p>
+          </div>
+          <div style={{ padding: '20px' }}>
+            <h4 className={styles.statNumber}>40%</h4>
+            <p className={styles.statLabel}>Average Churn Reduction</p>
+          </div>
+        </div>
+      </section>
+
+      <footer className={styles.footer}>
+        <p>&copy; 2026 ChurnSense AI. All rights reserved.</p>
+        <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', gap: '20px' }}>
+          <Link href="/privacy" style={{ opacity: 0.5 }}>Privacy Policy</Link>
+          <Link href="/terms" style={{ opacity: 0.5 }}>Terms of Service</Link>
+        </div>
+      </footer>
     </div>
   );
 }

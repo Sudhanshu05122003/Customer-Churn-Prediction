@@ -12,16 +12,23 @@ from typing import List, Optional
 class CustomerFeatures(BaseModel):
     """Schema for a single customer prediction request."""
 
-    Gender: int = Field(..., ge=0, le=1, description="0=Female, 1=Male")
+    Gender: int = Field(..., ge=0, le=2, description="0=Female, 1=Male, 2=Other")
     Age: int = Field(..., ge=18, le=100, description="Customer age (18-100)")
-    Tenure: int = Field(..., ge=0, le=20, description="Years with the bank (0-20)")
+    Tenure: int = Field(..., ge=0, le=12, description="Months with the bank (0-12)")
     Balance: float = Field(..., ge=0, description="Account balance ($)")
-    NumOfProducts: int = Field(..., ge=1, le=4, description="Number of bank products (1-4)")
+    NumOfProducts: int = Field(..., ge=1, le=100, description="Number of products (1-100)")
     HasCrCard: int = Field(..., ge=0, le=1, description="0=No, 1=Yes")
     IsActiveMember: int = Field(..., ge=0, le=1, description="0=No, 1=Yes")
     EstimatedSalary: float = Field(..., ge=0, description="Estimated annual salary ($)")
 
-    @field_validator("Gender", "HasCrCard", "IsActiveMember")
+    @field_validator("Gender")
+    @classmethod
+    def valid_gender(cls, v):
+        if v not in (0, 1, 2):
+            raise ValueError("Gender must be 0 (Female), 1 (Male), or 2 (Other)")
+        return v
+
+    @field_validator("HasCrCard", "IsActiveMember")
     @classmethod
     def must_be_binary(cls, v):
         if v not in (0, 1):
@@ -31,9 +38,10 @@ class CustomerFeatures(BaseModel):
     @field_validator("NumOfProducts")
     @classmethod
     def valid_product_count(cls, v):
-        if v not in (1, 2, 3, 4):
-            raise ValueError("Must be 1, 2, 3, or 4")
+        if v < 1:
+            raise ValueError("Must have at least 1 product")
         return v
+
 
 
 class PredictionResponse(BaseModel):

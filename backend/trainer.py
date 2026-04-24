@@ -388,7 +388,12 @@ def predict_with_custom_model(features, org_id):
     except Exception as e:
         logger.warning(f"SHAP for custom model failed: {e}")
 
-    return label, round(churn_prob, 4), risk, explanation
+    # Use the advanced retention strategy engine from app module
+    from app import generate_retention_strategies, classify_risk
+    suggestions = generate_retention_strategies(explanation, churn_prob)
+
+    return label, round(churn_prob, 4), risk, explanation, suggestions
+
 
 
 def list_custom_models():

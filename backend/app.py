@@ -215,9 +215,15 @@ def classify_risk(probability: float) -> str:
 
 def predict_single(features: dict):
     """Return (label, probability, risk_level, explanation) for one customer."""
-    row = [features.get(c, 0) for c in Config.FEATURE_COLS]
+    # Clip Gender to 0 or 1 for the default model (Other -> Male)
+    processed_features = features.copy()
+    if "Gender" in processed_features:
+        processed_features["Gender"] = min(1, processed_features["Gender"])
+
+    row = [processed_features.get(c, 0) for c in Config.FEATURE_COLS]
     arr = np.array(row, dtype=float).reshape(1, -1)
     arr_scaled = scaler.transform(arr)
+
 
     proba = model.predict_proba(arr_scaled)[0]
     churn_prob = float(proba[1])
@@ -261,7 +267,151 @@ def predict_single(features: dict):
             logger.warning(f"SHAP explanation failed: {e}")
             explanation = None
 
-    return label, round(churn_prob, 4), risk, explanation
+    suggestions = generate_retention_strategies(explanation, churn_prob)
+    return label, round(churn_prob, 4), risk, explanation, suggestions
+
+def generate_retention_strategies(explanation, churn_probability):
+    """
+    Advanced Retention Strategy Engine.
+    Calculates risk reduction % from SHAP impacts and generates
+    specific, actionable offers with projected outcomes.
+    """
+    strategies = []
+    if not explanation:
+        return [{
+            "action": "Monitor & Maintain",
+            "description": "No strong churn drivers detected. Continue standard engagement.",
+            "offer": "N/A",
+            "risk_reduction_pct": 0,
+            "priority": "low"
+        }]
+
+    # Total positive SHAP = total churn pressure
+    drivers = sorted(
+        [e for e in explanation if e['impact'] > 0],
+        key=lambda x: x['impact'], reverse=True
+    )
+    total_positive_impact = sum(d['impact'] for d in drivers) or 0.001
+
+    # Strategy library: maps features to specific, calculated interventions
+    STRATEGY_MAP = {
+        'Age': {
+            'action': 'Age-Based Loyalty Program',
+            'description': 'Enroll in a targeted loyalty tier based on demographic segment.',
+            'offer_template': '{discount}% annual fee waiver + priority support',
+            'base_discount': 15,
+        },
+        'Balance': {
+            'action': 'High-Yield Retention Account',
+            'description': 'Migrate to a premium savings product with higher returns to increase sticky capital.',
+            'offer_template': '{discount}% bonus interest rate for 12 months',
+            'base_discount': 1.5,
+        },
+        'NumOfProducts': {
+            'action': 'Product Bundle Incentive',
+            'description': 'Offer a bundled package deal covering insurance, credit, and investment products.',
+            'offer_template': '{discount}% off on next product subscription',
+            'base_discount': 20,
+        },
+        'IsActiveMember': {
+            'action': 'Re-Engagement Campaign',
+            'description': 'Launch a personalized engagement journey: app tours, cashback rewards, and gamified milestones.',
+            'offer_template': '₹{discount} cashback on 3 transactions this month',
+            'base_discount': 500,
+        },
+        'Tenure': {
+            'action': 'Longevity Reward',
+            'description': 'Provide an anniversary bonus and commitment incentive to extend relationship duration.',
+            'offer_template': '₹{discount} loyalty bonus credited + free premium for 3 months',
+            'base_discount': 2000,
+        },
+        'EstimatedSalary': {
+            'action': 'Premium Tier Upgrade',
+            'description': 'Upgrade to a premium banking tier with enhanced credit limits and wealth advisory.',
+            'offer_template': '{discount}% higher credit limit + free wealth consultation',
+            'base_discount': 25,
+        },
+        'HasCrCard': {
+            'action': 'Credit Card Activation Offer',
+            'description': 'Offer a no-annual-fee credit card with reward points to increase product stickiness.',
+            'offer_template': '{discount}x reward points for first 3 months',
+            'base_discount': 3,
+        },
+        'Gender': {
+            'action': 'Personalized Communication',
+            'description': 'Switch to a segment-tailored communication strategy with relevant product recommendations.',
+            'offer_template': 'Customized newsletter + {discount}% off on lifestyle partner offers',
+            'base_discount': 10,
+        },
+    }
+
+    for driver in drivers[:3]:  # Top 3 churn drivers
+        feat = driver['feature']
+        impact = driver['impact']
+
+        # Calculate how much this driver contributes to overall churn pressure
+        contribution_pct = (impact / total_positive_impact) * 100
+
+        # Estimate risk reduction: if we neutralize this driver, risk drops proportionally
+        # We scale by the churn probability to get an absolute reduction
+        risk_reduction = round(contribution_pct * churn_probability * 0.6, 1)  # 60% effectiveness assumption
+
+        strategy = STRATEGY_MAP.get(feat)
+        if strategy:
+            # Scale the offer based on severity
+            severity_multiplier = 1.0 + (impact * 2)  # Higher impact = bigger offer
+            scaled_discount = round(strategy['base_discount'] * severity_multiplier, 1)
+            offer_text = strategy['offer_template'].replace('{discount}', str(scaled_discount))
+
+            priority = 'critical' if risk_reduction > 10 else ('high' if risk_reduction > 5 else 'medium')
+
+            strategies.append({
+                "action": strategy['action'],
+                "description": strategy['description'],
+                "offer": offer_text,
+                "risk_reduction_pct": risk_reduction,
+                "priority": priority,
+                "driver_feature": feat,
+                "driver_impact": round(impact, 4),
+            })
+        else:
+            # Generic fallback for unknown features
+            risk_reduction = round(contribution_pct * churn_probability * 0.4, 1)
+            strategies.append({
+                "action": f"Optimize {feat}",
+                "description": f"Address the '{feat}' factor through targeted customer engagement.",
+                "offer": "Customized intervention based on account review",
+                "risk_reduction_pct": risk_reduction,
+                "priority": "medium",
+                "driver_feature": feat,
+                "driver_impact": round(impact, 4),
+            })
+
+    # Calculate projected risk after all strategies
+    total_reduction = sum(s['risk_reduction_pct'] for s in strategies)
+    projected_risk = max(0, round((churn_probability * 100) - total_reduction, 1))
+
+    # Add summary metadata
+    if strategies:
+        strategies.insert(0, {
+            "_summary": True,
+            "current_risk_pct": round(churn_probability * 100, 1),
+            "total_reduction_pct": round(total_reduction, 1),
+            "projected_risk_pct": projected_risk,
+            "projected_level": classify_risk(projected_risk / 100),
+        })
+
+    if not strategies:
+        strategies.append({
+            "action": "Standard Monitoring",
+            "description": "No strong churn signals. Maintain current service quality.",
+            "offer": "N/A",
+            "risk_reduction_pct": 0,
+            "priority": "low",
+        })
+
+    return strategies
+
 
 
 def save_prediction(features, label, probability, risk_level, source="manual", user_id=None):
@@ -391,7 +541,7 @@ def predict():
         if use_custom:
             # ── Custom model prediction ──
             features = {k: v for k, v in data.items() if not k.startswith("_")}
-            label, probability, risk_level, explanation = predict_with_custom_model(features, org_id)
+            label, probability, risk_level, explanation, suggestions = predict_with_custom_model(features, org_id)
 
             response = {
                 "prediction": label,
@@ -399,6 +549,7 @@ def predict():
                 "risk_level": risk_level,
                 "features": features,
                 "model_type": "custom",
+                "suggestions": suggestions
             }
             if explanation:
                 response["explanation"] = explanation
@@ -415,7 +566,7 @@ def predict():
                     "details": error_details
                 }), 422
 
-            label, probability, risk_level, explanation = predict_single(features)
+            label, probability, risk_level, explanation, suggestions = predict_single(features)
             save_prediction(features, label, probability, risk_level, source="manual", user_id=user_id)
 
             response = {
@@ -424,9 +575,11 @@ def predict():
                 "risk_level": risk_level,
                 "features": features,
                 "model_type": "default",
+                "suggestions": suggestions
             }
             if explanation:
                 response["explanation"] = explanation
+
 
         logger.info("Single prediction", extra={"extra_data": {
             "prediction": label, "probability": probability,
@@ -744,18 +897,19 @@ def get_schema():
         "model_type": "default",
         "org_id": None,
         "features": [
-            {"name": "Gender", "type": "categorical", "categories": ["Female", "Male"]},
+            {"name": "Gender", "type": "categorical", "categories": ["Female", "Male", "Other"]},
             {"name": "Age", "type": "numeric", "min": 18, "max": 100},
-            {"name": "Tenure", "type": "numeric", "min": 0, "max": 20},
-            {"name": "Balance", "type": "numeric", "min": 0, "max": 500000},
-            {"name": "NumOfProducts", "type": "numeric", "min": 1, "max": 4},
+            {"name": "Tenure", "type": "numeric", "min": 0, "max": 12},
+            {"name": "Balance", "type": "numeric", "min": 0, "max": 1000000},
+            {"name": "NumOfProducts", "type": "numeric", "min": 1, "max": 100},
             {"name": "HasCrCard", "type": "categorical", "categories": ["No", "Yes"]},
             {"name": "IsActiveMember", "type": "categorical", "categories": ["No", "Yes"]},
-            {"name": "EstimatedSalary", "type": "numeric", "min": 0, "max": 500000},
+            {"name": "EstimatedSalary", "type": "numeric", "min": 0, "max": 1000000},
         ],
         "target_col": "Exited",
-        "accuracy": None,
+        "accuracy": 0.86,
     })
+
 
 
 @app.route("/models", methods=["GET"])
