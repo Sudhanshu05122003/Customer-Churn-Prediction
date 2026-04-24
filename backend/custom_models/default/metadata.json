@@ -1,0 +1,111 @@
+{
+  "org_id": "default",
+  "feature_cols": [
+    "Age",
+    "Tenure",
+    "Balance",
+    "NumOfProducts",
+    "HasCrCard",
+    "IsActiveMember",
+    "EstimatedSalary"
+  ],
+  "target_col": "Gender",
+  "target_mapping": null,
+  "feature_metadata": [
+    {
+      "name": "Age",
+      "original_dtype": "int64",
+      "type": "numeric",
+      "min": 23.0,
+      "max": 72.0,
+      "mean": 44.35
+    },
+    {
+      "name": "Tenure",
+      "original_dtype": "int64",
+      "type": "numeric",
+      "min": 1.0,
+      "max": 10.0,
+      "mean": 4.55
+    },
+    {
+      "name": "Balance",
+      "original_dtype": "float64",
+      "type": "numeric",
+      "min": 0.0,
+      "max": 210000.0,
+      "mean": 85400.02
+    },
+    {
+      "name": "NumOfProducts",
+      "original_dtype": "int64",
+      "type": "numeric",
+      "min": 1.0,
+      "max": 4.0,
+      "mean": 1.8
+    },
+    {
+      "name": "HasCrCard",
+      "original_dtype": "int64",
+      "type": "categorical",
+      "categories": [
+        "0",
+        "1"
+      ]
+    },
+    {
+      "name": "IsActiveMember",
+      "original_dtype": "int64",
+      "type": "categorical",
+      "categories": [
+        "0",
+        "1"
+      ]
+    },
+    {
+      "name": "EstimatedSalary",
+      "original_dtype": "float64",
+      "type": "numeric",
+      "min": 38000.0,
+      "max": 175000.0,
+      "mean": 98500.0
+    }
+  ],
+  "dataset_rows": 20,
+  "dataset_cols": 7,
+  "accuracy": 0.3333,
+  "auc": 0.0,
+  "churn_rate": 0.5,
+  "feature_importance": [
+    {
+      "feature": "Age",
+      "importance": 0.3471
+    },
+    {
+      "feature": "Tenure",
+      "importance": 0.2127
+    },
+    {
+      "feature": "Balance",
+      "importance": 0.1663
+    },
+    {
+      "feature": "EstimatedSalary",
+      "importance": 0.1609
+    },
+    {
+      "feature": "NumOfProducts",
+      "importance": 0.0534
+    },
+    {
+      "feature": "IsActiveMember",
+      "importance": 0.032
+    },
+    {
+      "feature": "HasCrCard",
+      "importance": 0.0277
+    }
+  ],
+  "trained_at": "2026-03-31T08:17:20Z",
+  "training_time_sec": 1.22
+}

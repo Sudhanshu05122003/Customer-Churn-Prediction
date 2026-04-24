@@ -1,0 +1,33 @@
+# ─── Python ───
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ─── Environment ───
+.env
+*.env.local
+
+# ─── Database ───
+*.db
+
+# ─── Model artifacts ───
+backend/model/*.joblib
+
+# ─── IDE ───
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ─── OS ───
+.DS_Store
+Thumbs.db
+
+# ─── Docker ───
+docker-compose.override.yml
+
+# ─── Logs ───
+*.log
