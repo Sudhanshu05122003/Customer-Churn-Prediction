@@ -2,7 +2,7 @@ import './globals.css';
 import AppLayout from '@/components/Layout';
 
 export const metadata = {
-  title: 'ChurnSense | Premium Churn Prediction',
+  title: 'ChurnSense | Sense The Churn',
   description: 'AI-powered customer churn analysis and explainability.',
 };
 
