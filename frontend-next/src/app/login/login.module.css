@@ -55,6 +55,13 @@
   color: white;
 }
 
+.logoImage {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.3));
+}
+
 .logoText {
   font-size: 1.4rem;
   font-weight: 700;

@@ -34,9 +34,7 @@ export default function RegisterPage() {
       <div className={styles.backdrop} />
       <div className={styles.card}>
         <div className={styles.logo}>
-          <div className={styles.logoIcon}>
-            <Zap size={24} />
-          </div>
+          <img src="/logo.png" alt="ChurnSense Logo" className={styles.logoImage} />
           <span className={styles.logoText}>ChurnSense</span>
         </div>
 

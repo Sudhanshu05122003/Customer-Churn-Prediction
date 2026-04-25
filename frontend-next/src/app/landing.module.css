@@ -22,6 +22,21 @@
   pointer-events: none;
 }
 
+.heroLogo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-bottom: 32px;
+  z-index: 1;
+  filter: drop-shadow(0 0 15px rgba(99, 102, 241, 0.4));
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
 .badge {
   background: var(--primary-bg);
   border: 1px solid rgba(99, 102, 241, 0.3);

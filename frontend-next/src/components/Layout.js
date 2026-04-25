@@ -53,12 +53,14 @@ export default function AppLayout({ children }) {
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <aside className="w-64 glass-card m-4 mr-0 p-6 flex flex-col gap-8 hidden md:flex">
-        <div className="flex items-center gap-3 px-2">
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-            <Zap size={20} className="text-white fill-white" />
-          </div>
-          <span className="text-xl font-bold tracking-tight">ChurnSense</span>
-        </div>
+        <Link href="/" className="flex items-center gap-3 px-2 group">
+          <img 
+            src="/logo.png" 
+            alt="ChurnSense Logo" 
+            className="w-10 h-10 object-contain transition-transform group-hover:scale-110" 
+          />
+          <span className="text-xl font-bold tracking-tight text-white group-hover:text-indigo-400 transition-colors">ChurnSense</span>
+        </Link>
 
         <nav className="flex flex-col gap-2 flex-1">
           <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" active={pathname === '/dashboard'} />
