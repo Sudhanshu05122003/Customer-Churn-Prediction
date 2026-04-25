@@ -1,33 +1,16 @@
-# ─── Python ───
+.venv/
 __pycache__/
-*.py[cod]
-*.egg-info/
+*.pyc
+.env
+node_modules/
+.next/
 dist/
 build/
-.eggs/
-
-# ─── Environment ───
-.env
-*.env.local
-
-# ─── Database ───
 *.db
-
-# ─── Model artifacts ───
-backend/model/*.joblib
-
-# ─── IDE ───
+.env.local
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# ─── OS ───
 .DS_Store
 Thumbs.db
-
-# ─── Docker ───
-docker-compose.override.yml
-
-# ─── Logs ───
-*.log

@@ -41,7 +41,6 @@ class Config:
     PORT = int(os.getenv("PORT", "5000"))
 
     # Frontend
-    FRONTEND_DIR = os.path.join(BASE_DIR, "..", "frontend")
 
     # Feature columns (order matters for model)
     FEATURE_COLS = [

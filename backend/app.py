@@ -85,14 +85,19 @@ logger = logging.getLogger("churnsense")
 # ═══════════════════════════════════════════════
 #  APP SETUP
 # ═══════════════════════════════════════════════
-app = Flask(__name__, static_folder=Config.FRONTEND_DIR, static_url_path="")
+app = Flask(__name__)
+
 app.config["SECRET_KEY"] = Config.SECRET_KEY
-CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}})
+CORS(app)
 
 # ─── Load model & scaler ───────────────────────
-logger.info("Loading ML model and scaler...")
-model = joblib.load(Config.MODEL_PATH)
-scaler = joblib.load(Config.SCALER_PATH)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(BASE_DIR, "model.joblib")
+scaler_path = os.path.join(BASE_DIR, "scaler.joblib")
+
+logger.info(f"Loading ML model from {model_path}...")
+model = joblib.load(model_path)
+scaler = joblib.load(scaler_path)
 logger.info("Model loaded successfully")
 
 # ─── SHAP explainer (lazy-loaded) ──────────────
@@ -447,7 +452,16 @@ def save_prediction(features, label, probability, risk_level, source="manual", u
 # ═══════════════════════════════════════════════
 @app.route("/")
 def index():
-    return send_from_directory(Config.FRONTEND_DIR, "index.html")
+    return jsonify({
+        "name": "ChurnSense API",
+        "status": "online",
+        "version": "3.0.0",
+        "endpoints": {
+            "auth": ["/auth/login", "/auth/register", "/auth/me"],
+            "predictions": ["/predict", "/predict-bulk", "/history", "/stats"],
+            "system": ["/api/health", "/schema"]
+        }
+    })
 
 # ═══════════════════════════════════════════════
 #  ROUTES — AUTH
@@ -941,5 +955,5 @@ def get_sample_data():
 #  RUN
 # ═══════════════════════════════════════════════
 if __name__ == "__main__":
-    logger.info(f"Starting ChurnSense API on http://{Config.HOST}:{Config.PORT}")
-    app.run(debug=False, host=Config.HOST, port=Config.PORT)
+    logger.info(f"Starting ChurnSense API on http://0.0.0.0:5000")
+    app.run(host="0.0.0.0", port=5000)
