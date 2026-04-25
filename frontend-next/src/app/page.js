@@ -43,7 +43,11 @@ export default function LandingPage() {
       <header className={styles.hero}>
         <div className={styles.heroGlow} />
         
-        <img src="/logo.png" alt="ChurnSense Logo" className={styles.heroLogo} />
+        <div className={styles.brandStack}>
+          <img src="/logo.png" alt="ChurnSense Logo" className={styles.heroLogo} />
+          <h2 className={styles.heroBrandName}>ChurnSense</h2>
+        </div>
+
         <div className={styles.badge}>Next-Gen AI Churn Prediction</div>
         
         <h1 className={styles.title}>
