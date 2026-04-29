@@ -24,6 +24,14 @@ export default function AppLayout({ children }) {
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    
+    // Protect private routes
+    if (!token && !['/', '/login', '/register', '/demo'].includes(pathname)) {
+      window.location.href = '/login';
+      return;
+    }
+
     if (storedUser) setUser(JSON.parse(storedUser));
 
     // Load saved theme
@@ -45,7 +53,7 @@ export default function AppLayout({ children }) {
     window.location.href = '/login';
   };
 
-  if (['/', '/login', '/register'].includes(pathname)) {
+  if (['/', '/login', '/register', '/demo', '/onboarding'].includes(pathname)) {
     return <main className="w-full min-h-screen">{children}</main>;
   }
 

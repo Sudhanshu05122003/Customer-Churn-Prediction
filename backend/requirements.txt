@@ -9,3 +9,5 @@ PyJWT
 flask-cors
 python-dotenv
 joblib
+psycopg2-binary
+Flask-Limiter

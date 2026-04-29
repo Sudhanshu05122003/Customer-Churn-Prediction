@@ -390,9 +390,9 @@ def predict_with_custom_model(features, org_id):
 
     # Use the advanced retention strategy engine from app module
     from app import generate_retention_strategies, classify_risk
-    suggestions = generate_retention_strategies(explanation, churn_prob)
+    suggestions, reasons, actions = generate_retention_strategies(explanation, churn_prob)
 
-    return label, round(churn_prob, 4), risk, explanation, suggestions
+    return label, round(churn_prob, 4), risk, explanation, suggestions, reasons, actions
 
 
 

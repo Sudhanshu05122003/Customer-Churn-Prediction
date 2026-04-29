@@ -12,9 +12,9 @@ ChurnSense/
 │   ├── app.py              # Main API server
 │   ├── model.joblib        # Trained ML model
 │   ├── scaler.joblib       # Feature scaler
-│   ├── churn_history.db    # SQLite database
 │   ├── requirements.txt    # Python dependencies
-│   └── Procfile            # Render deployment config
+│   ├── Procfile            # Render deployment config
+│   └── render.yaml         # Blueprint for render deployment
 └── frontend-next/          # Next.js Application (Vercel Deployment)
     ├── src/                # React components & logic
     ├── .env.local          # Local environment variables
@@ -26,9 +26,8 @@ ChurnSense/
 ## 🚀 Deployment Instructions
 
 ### 1. Backend (Render)
-- **Repo Root**: `/backend`
-- **Build Command**: `pip install -r requirements.txt`
-- **Start Command**: `gunicorn app:app`
+- Use the included `render.yaml` blueprint to deploy the Flask API and the PostgreSQL database.
+- Alternatively, you can use **Procfile** (`gunicorn app:app`) if deploying manually. Ensure you add `DATABASE_URL`, `JWT_SECRET_KEY` and `FLASK_SECRET_KEY` as environment variables.
 
 ### 2. Frontend (Vercel)
 - **Framework Preset**: `Next.js`
@@ -41,7 +40,7 @@ ChurnSense/
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js, React, Recharts, Lucide Icons, Vanilla CSS (Glassmorphism)
-- **Backend**: Flask, Gunicorn, Scikit-learn, SHAP, Pydantic, SQLite
+- **Backend**: Flask, Gunicorn, Scikit-learn, SHAP, Pydantic, PostgreSQL
 - **Model**: Random Forest Classifier
 
 ---

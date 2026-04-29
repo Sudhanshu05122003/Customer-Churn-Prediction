@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { churnApi } from '@/lib/api';
-import { TrendingUp, Users, AlertTriangle, ShieldCheck, Activity, BarChart3, HeartPulse, Bell, ArrowUpRight } from 'lucide-react';
+import { TrendingUp, Users, AlertTriangle, ShieldCheck, Activity, BarChart3, HeartPulse, Bell, ArrowUpRight, DollarSign, Lock, Info } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, CartesianGrid } from 'recharts';
 import styles from './dashboard.module.css';
 
@@ -22,13 +22,66 @@ const STAT_ICONS = {
 export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [upgrading, setUpgrading] = useState(false);
+  const [savingIds, setSavingIds] = useState(new Set());
+
+  const fetchDashboardData = async () => {
+    try {
+      const [statsData, userData] = await Promise.all([
+        churnApi.getStats(),
+        fetch(process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/auth/me` : 'http://127.0.0.1:5000/auth/me', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        }).then(res => res.json()).then(data => data.success ? data.data : null).catch(()=>null)
+      ]);
+      setStats(statsData);
+      if (userData) {
+          setUser(userData);
+          localStorage.setItem('user', JSON.stringify(userData));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
-    churnApi.getStats()
-      .then(setStats)
-      .catch(() => { })
-      .finally(() => setLoading(false));
+    const stored = localStorage.getItem('user');
+    if (stored) setUser(JSON.parse(stored));
+    fetchDashboardData().finally(() => setLoading(false));
   }, []);
+
+  const handleToggleSave = async (id) => {
+    setSavingIds(prev => new Set(prev).add(id));
+    try {
+      await churnApi.toggleSavedStatus(id);
+      await fetchDashboardData();
+    } catch (err) {
+      console.error('Failed to toggle status', err);
+    } finally {
+      setSavingIds(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  };
+
+  const handleUpgrade = async () => {
+    setUpgrading(true);
+    try {
+        const res = await fetch(process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/auth/upgrade` : 'http://127.0.0.1:5000/auth/upgrade', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+            const updatedUser = { ...user, plan: 'pro' };
+            setUser(updatedUser);
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+        }
+    } catch(e) {}
+    setUpgrading(false);
+  };
 
   if (loading) {
     return (
@@ -77,6 +130,114 @@ export default function DashboardPage() {
         </div>
         <div className={styles.healthIndicator}>
           <HeartPulse size={14} /> Model Health: Optimal (98.2%)
+        </div>
+      </div>
+
+      {/* REVENUE IMPACT LAYER */}
+      <div className={styles.revenueGrid}>
+        <div className={styles.revenueCard}>
+          <div className={styles.revenueHeader}>
+            <div className={styles.revenueTitleWrap}>
+              <DollarSign size={24} className={styles.revenueIcon} />
+              <h2>Estimated Revenue at Risk</h2>
+              <div className={styles.tooltipWrap}>
+                <Info size={16} className={styles.infoIcon} />
+                <div className={styles.tooltip}>Potential loss from high-risk customers who haven't been retained yet.</div>
+              </div>
+            </div>
+          </div>
+          <div className={styles.revenueContent}>
+            <div className={styles.revenueMain}>
+              <span className={styles.currency}>₹</span>
+              <span className={styles.amount}>{(stats.revenue_at_risk || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+            </div>
+            <div className={styles.revenueMeta}>
+              <div className={styles.metaItem}>
+                <span className={styles.metaLabel}>At-Risk Users</span>
+                <span className={styles.metaValue}>{stats.total_high_risk_customers || 0}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className={`${styles.revenueCard} ${styles.saved}`}>
+          <div className={styles.revenueHeader}>
+            <div className={styles.revenueTitleWrap}>
+              <ShieldCheck size={24} style={{ color: '#10b981' }} />
+              <h2>Revenue Saved (confidence-adjusted)</h2>
+              <div className={styles.tooltipWrap}>
+                <Info size={16} className={styles.infoIcon} />
+                <div className={styles.tooltip}>Estimates are weighted based on churn probability to improve accuracy.</div>
+              </div>
+            </div>
+            <div className={styles.retentionBadge} style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+              {stats.total_saved_customers || 0} Retained
+            </div>
+          </div>
+          <div className={styles.revenueContent}>
+            <div className={styles.revenueMain}>
+              <span className={styles.currency}>₹</span>
+              <span className={styles.amount}>{(stats.adjusted_revenue_saved || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+            </div>
+            <div className={styles.progressWrap} style={{ width: '100%' }}>
+              <div className={styles.progressHeader}>
+                <span>Recovery Progress</span>
+                <span>{stats.recovered_percentage || 0}%</span>
+              </div>
+              <div className={styles.progressBar}>
+                <div className={styles.progressFill} style={{ width: `${stats.recovered_percentage || 0}%` }} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className={`${styles.revenueCard} ${styles.verifiedCard}`}>
+          <div className={styles.revenueHeader}>
+            <div className={styles.revenueTitleWrap}>
+              <CheckCircle2 size={24} style={{ color: '#3b82f6' }} />
+              <h2>Verified Revenue Saved</h2>
+              <div className={styles.tooltipWrap}>
+                <Info size={16} className={styles.infoIcon} />
+                <div className={styles.tooltip}>Revenue from customers who remained active for at least 7 days post-retention.</div>
+              </div>
+            </div>
+            <div className={styles.retentionBadge} style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
+              {stats.verification_rate || 0}% Verified
+            </div>
+          </div>
+          <div className={styles.revenueContent}>
+            <div className={styles.revenueMain}>
+              <span className={styles.currency}>₹</span>
+              <span className={styles.amount}>{(stats.verified_revenue_saved || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+            </div>
+            <div className={styles.revenueMeta} style={{ width: '100%', marginTop: '16px' }}>
+               <div className={styles.metaItem}>
+                <span className={styles.metaLabel}>Verified Accounts</span>
+                <span className={styles.metaValue}>{stats.total_verified_customers || 0}</span>
+              </div>
+            </div>
+
+            {stats.retention_distribution && stats.retention_distribution.length > 0 && (
+              <div className={styles.retentionDistWrap} style={{ marginTop: '16px' }}>
+                <span className={styles.metaLabel}>Retention Strength</span>
+                <div className={styles.retentionDist}>
+                  {stats.retention_distribution.map((d, i) => (
+                    <div 
+                      key={i} 
+                      className={styles.distBar} 
+                      style={{ 
+                        width: `${d.pct}%`, 
+                        background: d.label === 'Strong' ? '#10b981' : d.label === 'Moderate' ? '#f59e0b' : '#ef4444',
+                        display: d.pct > 0 ? 'flex' : 'none'
+                      }}
+                    >
+                      {d.pct > 15 ? d.label : ''}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -152,63 +313,115 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className={styles.secondaryGrid}>
+      {/* ADVANCED INSIGHTS - SOFT PAYWALL ZONE */}
+      <div className={styles.secondaryGridWrapper} style={{ position: 'relative' }}>
+        {user?.plan === 'free' && (
+          <div className={styles.paywallOverlay}>
+            <div className={styles.paywallContent}>
+              <Lock size={32} className={styles.paywallIcon} />
+              <h3>Unlock Advanced Business Insights</h3>
+              <p>Get full access to top churn drivers, contextual strategy recommendations, and unlimited API calls.</p>
+              <button className={styles.upgradeBtn} onClick={handleUpgrade} disabled={upgrading}>
+                {upgrading ? 'Upgrading...' : 'Upgrade to Pro'}
+              </button>
+            </div>
+          </div>
+        )}
+
+      <div className={`${styles.secondaryGrid} ${user?.plan === 'free' ? styles.blurred : ''}`}>
         <div className={styles.chartCard}>
           <div className={styles.chartHeader}>
             <Bell size={20} />
-            <h3>Smart Alerts</h3>
+            <h3>Top Churn Drivers</h3>
           </div>
-          <div className={styles.alertList}>
-            {stats.churn_count > 0 ? (
-              <div className={styles.alertItem}>
-                <div>
-                  <p className={styles.alertText}>Critical risk detected in recent manual prediction.</p>
-                  <p className={styles.alertTime}>Just now</p>
+          {stats.top_reasons && stats.top_reasons.length > 0 ? (
+            <div className={styles.driverList}>
+              {stats.top_reasons.map((r, i) => (
+                <div key={i} className={styles.driverItem}>
+                  <span className={styles.driverReason}>{r.reason}</span>
+                  <span className={styles.driverCount}>{r.count} accounts</span>
                 </div>
-                <ArrowUpRight size={16} color="#ef4444" />
-              </div>
-            ) : (
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No critical alerts in the last 24h.</p>
-            )}
-            <div className={styles.alertItem} style={{ borderColor: 'rgba(99,102,241,0.2)', background: 'var(--primary-bg)' }}>
-              <div>
-                <p className={styles.alertText} style={{ color: 'var(--primary-text)' }}>Weekly model drift report is ready.</p>
-                <p className={styles.alertTime}>2h ago</p>
-              </div>
-              <ArrowUpRight size={16} color="#6366f1" />
+              ))}
             </div>
-          </div>
+          ) : (
+            <div className={styles.noData}>Not enough data to identify drivers</div>
+          )}
         </div>
 
         <div className={styles.chartCard}>
           <div className={styles.chartHeader}>
             <Activity size={20} />
-            <h3>Model Drift Monitor</h3>
+            <h3>High-Risk Accounts</h3>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '10px' }}>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '8px' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Data Stability</span>
-                <span style={{ color: '#10b981' }}>99.8%</span>
-              </div>
-              <div style={{ height: '6px', background: 'var(--input-bg)', borderRadius: '3px' }}>
-                <div style={{ width: '99.8%', height: '100%', background: '#10b981', borderRadius: '3px' }} />
-              </div>
+          {stats.high_risk_users && stats.high_risk_users.length > 0 ? (
+            <div className={styles.actionTableWrap}>
+              <table className={styles.actionTable}>
+                <thead>
+                  <tr>
+                    <th>User ID</th>
+                    <th>Risk</th>
+                    <th>Retention Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(stats.high_risk_users || []).map(u => (
+                    <tr key={u.id}>
+                      <td>{u.id}</td>
+                      <td>
+                        <span style={{ 
+                          color: RISK_COLORS[u.risk_level] || '#ef4444',
+                          fontWeight: 600 
+                        }}>
+                          {u.risk_level} ({Math.round(u.probability * 100)}%)
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          {u.saved_status === 1 ? (
+                            <>
+                              <div className={`${styles.actionBtn} ${styles.retained}`}>
+                                <ShieldCheck size={14} /> Retained
+                                <span 
+                                  className={`${styles.vBadge} ${styles[u.retention_strength] || styles[u.validation_status] || styles.pending}`}
+                                  title={u.retention_score ? `Retention Score: ${u.retention_score}/100` : ''}
+                                >
+                                  {u.retention_strength || u.validation_status || 'pending'}
+                                </span>
+                              </div>
+                              <button 
+                                className={styles.undoBtn}
+                                onClick={() => handleToggleSave(u.id)}
+                                disabled={savingIds.has(u.id)}
+                              >
+                                {savingIds.has(u.id) ? '...' : 'Undo'}
+                              </button>
+                            </>
+                          ) : (
+                            <button 
+                              className={styles.actionBtn}
+                              onClick={() => handleToggleSave(u.id)}
+                              disabled={savingIds.has(u.id)}
+                            >
+                              {savingIds.has(u.id) ? (
+                                <Activity size={14} className={styles.spinner} />
+                              ) : (
+                                <Zap size={14} />
+                              )}
+                              Mark as Retained
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '8px' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Prediction Confidence</span>
-                <span style={{ color: '#6366f1' }}>94.2%</span>
-              </div>
-              <div style={{ height: '6px', background: 'var(--input-bg)', borderRadius: '3px' }}>
-                <div style={{ width: '94.2%', height: '100%', background: '#6366f1', borderRadius: '3px' }} />
-              </div>
-            </div>
-          </div>
-          <p style={{ marginTop: '24px', fontSize: '0.8rem', color: 'var(--text-faint)' }}>
-            Model drift is calculated based on distribution shifts in feature inputs compared to training data.
-          </p>
+          ) : (
+            <div className={styles.noData}>No high-risk accounts detected</div>
+          )}
         </div>
+      </div>
       </div>
     </div>
   );

@@ -34,7 +34,10 @@ import os
 import io
 import sys
 import json
-import sqlite3
+import psycopg2
+import psycopg2.extras
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import logging
 import time
 from datetime import datetime, timezone
@@ -90,6 +93,13 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = Config.SECRET_KEY
 CORS(app)
 
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["1000 per hour"],
+    storage_uri="memory://"
+)
+
 # ─── Load model & scaler ───────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.join(BASE_DIR, "model.joblib")
@@ -119,8 +129,8 @@ def get_shap_explainer():
 # ─── Database helpers ───────────────────────────
 def get_db():
     if "db" not in g:
-        g.db = sqlite3.connect(Config.DATABASE_PATH)
-        g.db.row_factory = sqlite3.Row
+        g.db = psycopg2.connect(Config.DATABASE_URL)
+        g.db.autocommit = True
     return g.db
 
 @app.teardown_appcontext
@@ -131,10 +141,12 @@ def close_db(exception):
 
 def init_db():
     """Create prediction table."""
-    conn = sqlite3.connect(Config.DATABASE_PATH)
-    conn.execute("""
+    conn = psycopg2.connect(Config.DATABASE_URL)
+    conn.autocommit = True
+    cursor = conn.cursor()
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS predictions (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            id          SERIAL PRIMARY KEY,
             timestamp   TEXT    NOT NULL,
             user_id     INTEGER,
             gender      INTEGER,
@@ -148,9 +160,45 @@ def init_db():
             prediction  TEXT,
             probability REAL,
             risk_level  TEXT,
-            source      TEXT DEFAULT 'manual'
+            source      TEXT DEFAULT 'manual',
+            reasons     TEXT,
+            actions     TEXT,
+            saved_status INTEGER DEFAULT 0,
+            saved_timestamp TEXT
         )
     """)
+    try:
+        cursor.execute("ALTER TABLE predictions ADD COLUMN reasons TEXT")
+    except psycopg2.Error:
+        pass
+    try:
+        cursor.execute("ALTER TABLE predictions ADD COLUMN actions TEXT")
+    except psycopg2.Error:
+        pass
+    try:
+        cursor.execute("ALTER TABLE predictions ADD COLUMN saved_status INTEGER DEFAULT 0")
+    except psycopg2.Error:
+        pass
+    try:
+        cursor.execute("ALTER TABLE predictions ADD COLUMN saved_timestamp TEXT")
+    except psycopg2.Error:
+        pass
+    try:
+        cursor.execute("ALTER TABLE predictions ADD COLUMN validation_status TEXT DEFAULT 'pending'")
+    except psycopg2.Error:
+        pass
+    try:
+        cursor.execute("ALTER TABLE predictions ADD COLUMN validation_checked_at TEXT")
+    except psycopg2.Error:
+        pass
+    try:
+        cursor.execute("ALTER TABLE predictions ADD COLUMN retention_score INTEGER")
+    except psycopg2.Error:
+        pass
+    try:
+        cursor.execute("ALTER TABLE predictions ADD COLUMN retention_strength TEXT")
+    except psycopg2.Error:
+        pass
     conn.commit()
     conn.close()
 
@@ -181,28 +229,36 @@ def log_request_end(response):
     return response
 
 # ═══════════════════════════════════════════════
-#  GLOBAL ERROR HANDLERS
+#  GLOBAL ERROR HANDLERS & RESPONSE WRAPPER
 # ═══════════════════════════════════════════════
+def api_response(data=None, success=True, message="", code=200):
+    """Standardized API response format."""
+    return jsonify({
+        "success": success,
+        "data": data if data is not None else {},
+        "message": message
+    }), code
+
 @app.errorhandler(400)
 def bad_request(e):
-    return jsonify({"error": "Bad request", "code": 400, "details": str(e)}), 400
+    return api_response(success=False, message=f"Bad request: {e}", code=400)
 
 @app.errorhandler(404)
 def not_found(e):
-    return jsonify({"error": "Not found", "code": 404}), 404
+    return api_response(success=False, message="Not found", code=404)
 
 @app.errorhandler(405)
 def method_not_allowed(e):
-    return jsonify({"error": "Method not allowed", "code": 405}), 405
+    return api_response(success=False, message="Method not allowed", code=405)
 
 @app.errorhandler(429)
 def rate_limited(e):
-    return jsonify({"error": "Rate limit exceeded. Please try again later.", "code": 429}), 429
+    return api_response(success=False, message="Rate limit exceeded. Please try again later.", code=429)
 
 @app.errorhandler(500)
 def internal_error(e):
     logger.error("Internal server error", exc_info=True)
-    return jsonify({"error": "Internal server error", "code": 500}), 500
+    return api_response(success=False, message="Internal server error", code=500)
 
 # ═══════════════════════════════════════════════
 #  HELPERS
@@ -272,8 +328,8 @@ def predict_single(features: dict):
             logger.warning(f"SHAP explanation failed: {e}")
             explanation = None
 
-    suggestions = generate_retention_strategies(explanation, churn_prob)
-    return label, round(churn_prob, 4), risk, explanation, suggestions
+    suggestions, reasons, actions = generate_retention_strategies(explanation, churn_prob)
+    return label, round(churn_prob, 4), risk, explanation, suggestions, reasons, actions
 
 def generate_retention_strategies(explanation, churn_probability):
     """
@@ -349,8 +405,43 @@ def generate_retention_strategies(explanation, churn_probability):
             'base_discount': 10,
         },
     }
+    
+    # CASE-BASED Contextual Strategies (High Priority)
+    # Extract raw feature values
+    val_map = {e["feature"]: e.get("value") for e in explanation} if explanation else {}
+    
+    has_case_strategy = False
+    
+    # Case 1: High Value + Low Activity
+    if val_map.get("Balance", 0) > 100000 and str(val_map.get("IsActiveMember", "")).lower() in ["0", "no", 0]:
+        risk_reduction = round(churn_probability * 15, 1) # 15% flat reduction
+        strategies.append({
+            "action": "Executive Outreach",
+            "description": "High-value account with low activity detected. Immediate human intervention required.",
+            "offer": "Offer personalized onboarding call with a Senior Wealth Manager",
+            "risk_reduction_pct": risk_reduction,
+            "priority": "critical",
+            "driver_feature": "Contextual",
+            "driver_impact": 0.5
+        })
+        has_case_strategy = True
+        
+    # Case 2: New Customer + Low Products
+    elif val_map.get("Tenure", 99) <= 1 and val_map.get("NumOfProducts", 99) == 1:
+        risk_reduction = round(churn_probability * 10, 1)
+        strategies.append({
+            "action": "Product Education Campaign",
+            "description": "New customer not fully utilizing platform capabilities.",
+            "offer": "Free month of premium features to encourage product exploration",
+            "risk_reduction_pct": risk_reduction,
+            "priority": "high",
+            "driver_feature": "Contextual",
+            "driver_impact": 0.4
+        })
+        has_case_strategy = True
 
-    for driver in drivers[:3]:  # Top 3 churn drivers
+    limit = 2 if has_case_strategy else 3
+    for driver in drivers[:limit]:  # Top churn drivers
         feat = driver['feature']
         impact = driver['impact']
 
@@ -415,19 +506,43 @@ def generate_retention_strategies(explanation, churn_probability):
             "priority": "low",
         })
 
-    return strategies
+    # Extract human-readable reasons and actions
+    reasons = []
+    actions = []
+    for s in strategies:
+        if not s.get("_summary"):
+            feat = s.get("driver_feature")
+            if feat:
+                # Map technical feature names to simple reasons
+                reason_map = {
+                    "Age": "Demographic risk factor",
+                    "Balance": "Low engagement with funds",
+                    "NumOfProducts": "Low product usage",
+                    "IsActiveMember": "Low recent activity",
+                    "Tenure": "Short relationship duration",
+                    "EstimatedSalary": "Income bracket factor",
+                    "HasCrCard": "Lacking credit product",
+                    "Gender": "Demographic profile"
+                }
+                reasons.append(reason_map.get(feat, f"Issue with {feat}"))
+            elif "action" in s and s["action"] == "Standard Monitoring":
+                reasons.append("Customer is healthy")
+            actions.append(s.get("action"))
+
+    return strategies, reasons, actions
 
 
 
-def save_prediction(features, label, probability, risk_level, source="manual", user_id=None):
-    """Persist prediction to SQLite."""
+def save_prediction(features, label, probability, risk_level, source="manual", user_id=None, reasons=None, actions=None):
+    """Persist prediction to Postgres."""
     db = get_db()
-    db.execute(
+    cursor = db.cursor()
+    cursor.execute(
         """INSERT INTO predictions
            (timestamp, user_id, gender, age, tenure, balance,
             num_products, has_cr_card, is_active, est_salary,
-            prediction, probability, risk_level, source)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            prediction, probability, risk_level, source, reasons, actions)
+           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
         (
             datetime.now(timezone.utc).isoformat(),
             user_id,
@@ -443,16 +558,36 @@ def save_prediction(features, label, probability, risk_level, source="manual", u
             probability,
             risk_level,
             source,
+            json.dumps(reasons) if reasons else None,
+            json.dumps(actions) if actions else None,
         ),
     )
-    db.commit()
+    cursor.close()
+
+def check_usage_limits(user_id, calls_to_add=1):
+    """Enforce plan limits and increment API calls."""
+    if not user_id:
+        return None
+    db = get_db()
+    cursor = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute("SELECT plan, api_calls FROM users WHERE id = %s", (user_id,))
+    user = cursor.fetchone()
+    if not user:
+        return None
+    
+    if user['plan'] == 'free' and (user['api_calls'] or 0) + calls_to_add > 50:
+        return "Free plan limit exceeded (50 predictions max). Upgrade to Pro for unlimited."
+        
+    cursor.execute("UPDATE users SET api_calls = COALESCE(api_calls, 0) + %s WHERE id = %s", (calls_to_add, user_id))
+    cursor.close()
+    return None
 
 # ═══════════════════════════════════════════════
 #  ROUTES — FRONTEND
 # ═══════════════════════════════════════════════
 @app.route("/")
 def index():
-    return jsonify({
+    return api_response(data={
         "name": "ChurnSense API",
         "status": "online",
         "version": "3.0.0",
@@ -473,27 +608,59 @@ def auth_register():
         data = request.get_json(force=True)
         req = RegisterRequest(**data)
     except ValidationError as e:
-        return jsonify({"error": "Validation failed", "code": 422, "details": e.errors()}), 422
+        error_details = [{"field": err["loc"][-1], "message": err["msg"]} for err in e.errors()]
+        return api_response(success=False, message="Validation failed", data={"details": error_details}, code=422)
     except Exception:
-        return jsonify({"error": "Invalid JSON body", "code": 400}), 400
+        return api_response(success=False, message="Invalid JSON body", code=400)
 
     user, err = register_user(req.username, req.email, req.password, req.organization)
     if err:
-        return jsonify({"error": err, "code": 409}), 409
+        return api_response(success=False, message=err, code=409)
 
     token = create_token(user["id"], user["email"], user["username"])
     logger.info(f"User registered: {user['email']}")
 
-    return jsonify({
-        "message": "Registration successful",
-        "token": token,
-        "user": {
-            "id": user["id"],
-            "username": user["username"],
-            "email": user["email"],
-            "organization": user["organization"],
-        }
-    }), 201
+    return api_response(
+        message="Registration successful",
+        data={
+            "token": token,
+            "user": {
+                "id": user["id"],
+                "username": user["username"],
+                "email": user["email"],
+                "organization": user["organization"],
+                "plan": user.get("plan", "free"),
+                "api_calls": user.get("api_calls", 0)
+            }
+        },
+        code=201
+    )
+
+
+@app.route("/auth/me", methods=["GET"])
+@token_required
+def auth_me():
+    """Get current user details."""
+    db = get_db()
+    cursor = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute("SELECT id, username, email, organization, plan, api_calls, last_login FROM users WHERE id = %s", (g.current_user["user_id"],))
+    user = cursor.fetchone()
+    cursor.close()
+    if not user:
+        return api_response(success=False, message="User not found", code=404)
+    return api_response(data=dict(user))
+
+
+@app.route("/auth/upgrade", methods=["POST"])
+@token_required
+def auth_upgrade():
+    """Mock endpoint to upgrade user to Pro plan."""
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("UPDATE users SET plan = 'pro' WHERE id = %s", (g.current_user["user_id"],))
+    db.commit()
+    cursor.close()
+    return api_response(message="Successfully upgraded to Pro plan!", data={"plan": "pro"})
 
 
 @app.route("/auth/login", methods=["POST"])
@@ -503,34 +670,35 @@ def auth_login():
         data = request.get_json(force=True)
         req = LoginRequest(**data)
     except ValidationError as e:
-        return jsonify({"error": "Validation failed", "code": 422, "details": e.errors()}), 422
+        error_details = [{"field": err["loc"][-1], "message": err["msg"]} for err in e.errors()]
+        return api_response(success=False, message="Validation failed", data={"details": error_details}, code=422)
     except Exception:
-        return jsonify({"error": "Invalid JSON body", "code": 400}), 400
+        return api_response(success=False, message="Invalid JSON body", code=400)
 
     user, err = authenticate_user(req.email, req.password)
     if err:
-        return jsonify({"error": err, "code": 401}), 401
+        return api_response(success=False, message=err, code=401)
 
     token = create_token(user["id"], user["email"], user["username"])
     logger.info(f"User login: {user['email']}")
 
-    return jsonify({
-        "message": "Login successful",
-        "token": token,
-        "user": {
-            "id": user["id"],
-            "username": user["username"],
-            "email": user["email"],
-            "organization": user["organization"],
-        }
-    })
+    return api_response(
+        message="Login successful",
+        data={
+            "token": token,
+            "user": {
+                "id": user["id"],
+                "username": user["username"],
+                "email": user["email"],
+                "organization": user["organization"],
+                "plan": user.get("plan", "free"),
+                "api_calls": user.get("api_calls", 0),
+                "last_login": user.get("last_login")
+            }
+        },
+        code=200
+    )
 
-
-@app.route("/auth/me", methods=["GET"])
-@token_required
-def auth_me():
-    """Return current authenticated user info."""
-    return jsonify({"user": g.current_user})
 
 # ═══════════════════════════════════════════════
 #  ROUTES — PREDICTIONS
@@ -542,6 +710,11 @@ def predict():
     try:
         data = request.get_json(force=True)
         user_id = g.current_user.get("user_id") if g.current_user else None
+        
+        # Check usage limits
+        limit_err = check_usage_limits(user_id, 1)
+        if limit_err:
+            return api_response(success=False, message=limit_err, code=403)
 
         # Check if user has a custom model
         org_id = data.pop("_org_id", None) or (str(user_id) if user_id else None)
@@ -555,7 +728,7 @@ def predict():
         if use_custom:
             # ── Custom model prediction ──
             features = {k: v for k, v in data.items() if not k.startswith("_")}
-            label, probability, risk_level, explanation, suggestions = predict_with_custom_model(features, org_id)
+            label, probability, risk_level, explanation, suggestions, reasons, actions = predict_with_custom_model(features, org_id)
 
             response = {
                 "prediction": label,
@@ -563,7 +736,9 @@ def predict():
                 "risk_level": risk_level,
                 "features": features,
                 "model_type": "custom",
-                "suggestions": suggestions
+                "suggestions": suggestions,
+                "reasons": reasons,
+                "actions": actions
             }
             if explanation:
                 response["explanation"] = explanation
@@ -574,14 +749,10 @@ def predict():
                 features = validated.model_dump()
             except ValidationError as e:
                 error_details = [{"field": err["loc"][-1], "message": err["msg"]} for err in e.errors()]
-                return jsonify({
-                    "error": "Validation failed",
-                    "code": 422,
-                    "details": error_details
-                }), 422
+                return api_response(success=False, message="Validation failed", data={"details": error_details}, code=422)
 
-            label, probability, risk_level, explanation, suggestions = predict_single(features)
-            save_prediction(features, label, probability, risk_level, source="manual", user_id=user_id)
+            label, probability, risk_level, explanation, suggestions, reasons, actions = predict_single(features)
+            save_prediction(features, label, probability, risk_level, source="manual", user_id=user_id, reasons=reasons, actions=actions)
 
             response = {
                 "prediction": label,
@@ -589,7 +760,9 @@ def predict():
                 "risk_level": risk_level,
                 "features": features,
                 "model_type": "default",
-                "suggestions": suggestions
+                "suggestions": suggestions,
+                "reasons": reasons,
+                "actions": actions
             }
             if explanation:
                 response["explanation"] = explanation
@@ -600,11 +773,11 @@ def predict():
             "risk_level": risk_level, "model": "custom" if use_custom else "default"
         }})
 
-        return jsonify(response)
+        return api_response(data=response)
 
     except Exception as e:
         logger.error(f"Prediction error: {e}", exc_info=True)
-        return jsonify({"error": str(e), "code": 500}), 500
+        return api_response(success=False, message=str(e), code=500)
 
 
 @app.route("/predict-bulk", methods=["POST"])
@@ -624,10 +797,17 @@ def predict_bulk():
         df = pd.read_csv(stream)
 
         if len(df) == 0:
-            return jsonify({"error": "CSV file is empty", "code": 400}), 400
+            return api_response(success=False, message="CSV file is empty", code=400)
 
         if len(df) > 10000:
-            return jsonify({"error": "CSV exceeds 10,000 row limit", "code": 400}), 400
+            return api_response(success=False, message="CSV exceeds 10,000 row limit", code=400)
+
+        user_id = g.current_user.get("user_id") if g.current_user else None
+        
+        # Check usage limits
+        limit_err = check_usage_limits(user_id, len(df))
+        if limit_err:
+            return api_response(success=False, message=limit_err, code=403)
 
         # Normalize column names
         col_map = {}
@@ -642,24 +822,26 @@ def predict_bulk():
         # Check required columns
         missing = [c for c in Config.FEATURE_COLS if c not in df.columns]
         if missing:
-            return jsonify({
-                "error": f"CSV missing required columns: {missing}",
-                "code": 400,
-                "expected_columns": Config.FEATURE_COLS,
-            }), 400
+            return api_response(
+                success=False,
+                message=f"CSV missing required columns: {missing}",
+                data={"expected_columns": Config.FEATURE_COLS},
+                code=400
+            )
 
         # Predict each row
-        user_id = g.current_user.get("user_id") if g.current_user else None
         results = []
         for _, row in df.iterrows():
             features = {c: row[c] for c in Config.FEATURE_COLS}
-            label, prob, risk, explanation = predict_single(features)
-            save_prediction(features, label, prob, risk, source="csv", user_id=user_id)
+            label, prob, risk, explanation, suggestions, reasons, actions = predict_single(features)
+            save_prediction(features, label, prob, risk, source="csv", user_id=user_id, reasons=reasons, actions=actions)
             result_entry = {
                 **features,
                 "prediction": label,
                 "probability": prob,
                 "risk_level": risk,
+                "reasons": reasons,
+                "actions": actions
             }
             if explanation:
                 result_entry["explanation"] = explanation
@@ -672,7 +854,7 @@ def predict_bulk():
             "total": len(results), "churn": churn_count, "stay": stay_count
         }})
 
-        return jsonify({
+        return api_response(data={
             "total": len(results),
             "churn_count": churn_count,
             "stay_count": stay_count,
@@ -683,7 +865,7 @@ def predict_bulk():
 
     except Exception as e:
         logger.error(f"Bulk prediction error: {e}", exc_info=True)
-        return jsonify({"error": str(e), "code": 500}), 500
+        return api_response(success=False, message=str(e), code=500)
 
 
 # ═══════════════════════════════════════════════
@@ -696,21 +878,34 @@ def history():
     try:
         limit = request.args.get("limit", 50, type=int)
         db = get_db()
+        cursor = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
         if g.current_user:
-            rows = db.execute(
-                "SELECT * FROM predictions WHERE user_id = ? ORDER BY id DESC LIMIT ?",
+            cursor.execute(
+                "SELECT * FROM predictions WHERE user_id = %s ORDER BY id DESC LIMIT %s",
                 (g.current_user["user_id"], limit)
-            ).fetchall()
+            )
+            rows = cursor.fetchall()
         else:
-            rows = db.execute(
-                "SELECT * FROM predictions ORDER BY id DESC LIMIT ?", (limit,)
-            ).fetchall()
+            cursor.execute(
+                "SELECT * FROM predictions ORDER BY id DESC LIMIT %s", (limit,)
+            )
+            rows = cursor.fetchall()
 
-        return jsonify([dict(r) for r in rows])
+        cursor.close()
+        # Parse JSON lists back
+        for r in rows:
+            if r.get('reasons'):
+                try: r['reasons'] = json.loads(r['reasons'])
+                except: r['reasons'] = []
+            if r.get('actions'):
+                try: r['actions'] = json.loads(r['actions'])
+                except: r['actions'] = []
+
+        return api_response(data=[dict(r) for r in rows])
     except Exception as e:
         logger.error(f"History error: {e}")
-        return jsonify({"error": str(e), "code": 500}), 500
+        return api_response(success=False, message=str(e), code=500)
 
 
 @app.route("/history/<int:prediction_id>", methods=["DELETE"])
@@ -719,59 +914,256 @@ def delete_history(prediction_id):
     """Delete a specific prediction entry."""
     try:
         db = get_db()
+        cursor = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         user_id = g.current_user.get("user_id") if g.current_user else None
 
         if user_id:
             # Check ownership
-            entry = db.execute("SELECT user_id FROM predictions WHERE id = ?", (prediction_id,)).fetchone()
+            cursor.execute("SELECT user_id FROM predictions WHERE id = %s", (prediction_id,))
+            entry = cursor.fetchone()
             if not entry:
-                return jsonify({"error": "Entry not found", "code": 404}), 404
+                cursor.close()
+                return api_response(success=False, message="Entry not found", code=404)
             if entry["user_id"] != user_id:
-                return jsonify({"error": "Unauthorized to delete this entry", "code": 403}), 403
+                cursor.close()
+                return api_response(success=False, message="Unauthorized to delete this entry", code=403)
 
-            db.execute("DELETE FROM predictions WHERE id = ?", (prediction_id,))
+            cursor.execute("DELETE FROM predictions WHERE id = %s", (prediction_id,))
         else:
             # For guest users, only allow if the entry has no user_id (optional policy)
-            db.execute("DELETE FROM predictions WHERE id = ?", (prediction_id,))
+            cursor.execute("DELETE FROM predictions WHERE id = %s", (prediction_id,))
 
-        db.commit()
-        return jsonify({"message": "Entry deleted successfully", "id": prediction_id})
+        cursor.close()
+        return api_response(message="Entry deleted successfully", data={"id": prediction_id})
     except Exception as e:
         logger.error(f"Delete history error: {e}")
-        return jsonify({"error": str(e), "code": 500}), 500
+        return api_response(success=False, message=str(e), code=500)
+
+
+@app.route("/history/<int:prediction_id>/save", methods=["POST"])
+@optional_token
+def toggle_saved_status(prediction_id):
+    """Toggle the saved status of a high-risk prediction."""
+    try:
+        db = get_db()
+        cursor = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        user_id = g.current_user.get("user_id") if g.current_user else None
+
+        # Verify entry exists and check ownership if user is logged in
+        if user_id:
+            cursor.execute("SELECT user_id, saved_status FROM predictions WHERE id = %s", (prediction_id,))
+            entry = cursor.fetchone()
+            if not entry:
+                cursor.close()
+                return api_response(success=False, message="Entry not found", code=404)
+            if entry["user_id"] != user_id:
+                cursor.close()
+                return api_response(success=False, message="Unauthorized to modify this entry", code=403)
+        else:
+            cursor.execute("SELECT saved_status FROM predictions WHERE id = %s", (prediction_id,))
+            entry = cursor.fetchone()
+            if not entry:
+                cursor.close()
+                return api_response(success=False, message="Entry not found", code=404)
+
+        current_status = entry.get("saved_status", 0)
+        new_status = 1 if current_status == 0 else 0
+        timestamp = datetime.now(timezone.utc).isoformat() if new_status == 1 else None
+
+        cursor.execute(
+            "UPDATE predictions SET saved_status = %s, saved_timestamp = %s WHERE id = %s",
+            (new_status, timestamp, prediction_id)
+        )
+        
+        cursor.close()
+        return api_response(
+            message="Status updated successfully", 
+            data={"id": prediction_id, "saved_status": new_status, "saved_timestamp": timestamp}
+        )
+    except Exception as e:
+        logger.error(f"Toggle save status error: {e}")
+        return api_response(success=False, message=str(e), code=500)
+
 
 
 @app.route("/stats", methods=["GET"])
+@optional_token
 def stats():
     """Aggregate statistics for the dashboard."""
     try:
         db = get_db()
-        total = db.execute("SELECT COUNT(*) FROM predictions").fetchone()[0]
-        churn = db.execute(
-            "SELECT COUNT(*) FROM predictions WHERE prediction='Churn'"
-        ).fetchone()[0]
+        cursor = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        
+        user_id = g.current_user.get("user_id") if g.current_user else None
+        
+        # Helper string for where clause
+        where_clause = "WHERE user_id = %s" if user_id else "WHERE user_id IS NULL"
+        params = (user_id,) if user_id else ()
+        
+        cursor.execute(f"SELECT COUNT(*) as count FROM predictions {where_clause}", params)
+        total = cursor.fetchone()["count"]
+        
+        cursor.execute(f"SELECT COUNT(*) as count FROM predictions {where_clause} AND prediction='Churn'", params)
+        churn = cursor.fetchone()["count"]
         stay = total - churn
 
-        trend = db.execute("""
-            SELECT DATE(timestamp) as date,
+        cursor.execute(f"""
+            SELECT CAST(timestamp AS DATE) as date,
                    SUM(CASE WHEN prediction='Churn' THEN 1 ELSE 0 END) as churns,
                    SUM(CASE WHEN prediction='Stay'  THEN 1 ELSE 0 END) as stays,
                    COUNT(*) as total
             FROM predictions
-            GROUP BY DATE(timestamp)
+            {where_clause}
+            GROUP BY CAST(timestamp AS DATE)
             ORDER BY date DESC
             LIMIT 7
-        """).fetchall()
+        """, params)
+        trend = cursor.fetchall()
 
         # Risk distribution
-        risk_dist = db.execute("""
+        cursor.execute(f"""
             SELECT risk_level, COUNT(*) as count
             FROM predictions
-            WHERE risk_level IS NOT NULL
+            {where_clause + " AND " if user_id or where_clause != "" else "WHERE "} risk_level IS NOT NULL
             GROUP BY risk_level
-        """).fetchall()
+        """, params)
+        risk_dist = cursor.fetchall()
+        
+        # Outcome Validation Layer: Run Verification on Saved Items
+        now = datetime.now(timezone.utc)
+        cursor.execute(f"""
+            SELECT id, saved_timestamp, validation_status 
+            FROM predictions 
+            WHERE saved_status = 1 AND validation_status = 'pending'
+            { "AND user_id = %s" if user_id else "" }
+        """, (user_id,) if user_id else ())
+        pending_saves = cursor.fetchall()
+        
+        for ps in pending_saves:
+            try:
+                s_time = datetime.fromisoformat(ps['saved_timestamp'])
+                # Verification Window: 7 Days
+                if (now - s_time).days >= 7:
+                    # Multi-Signal Retention Scoring Logic
+                    # We fetch the original record to evaluate signals
+                    cursor.execute("SELECT is_active, balance, probability FROM predictions WHERE id = %s", (ps['id'],))
+                    orig = cursor.fetchone()
+                    
+                    # Rule-based scoring (simulated behavioral signals)
+                    score = 40 # Base score
+                    if orig.get('is_active') == 1: score += 30
+                    if float(orig.get('balance') or 0) > 1000: score += 20
+                    # Original low probability means they were easier to retain
+                    if orig.get('probability', 1.0) < 0.8: score += 10
+                    
+                    # Capping and Strength Assignment
+                    score = min(100, max(0, score))
+                    strength = 'Weak'
+                    if score >= 70: strength = 'Strong'
+                    elif score >= 40: strength = 'Moderate'
+                    
+                    cursor.execute(
+                        "UPDATE predictions SET validation_status = 'verified', validation_checked_at = %s, retention_score = %s, retention_strength = %s WHERE id = %s",
+                        (now.isoformat(), score, strength, ps['id'])
+                    )
+            except:
+                continue
+        db.commit()
 
-        return jsonify({
+        # High Risk Users
+        cursor.execute(f"""
+            SELECT id, timestamp, risk_level, probability, prediction, reasons, actions, est_salary, balance, saved_status, validation_status, retention_score, retention_strength
+            FROM predictions
+            {where_clause + " AND " if user_id or where_clause != "" else "WHERE "} risk_level IN ('High', 'Critical')
+            ORDER BY timestamp DESC
+            LIMIT 1000
+        """, params)
+        high_risk_users = cursor.fetchall()
+        
+        for r in high_risk_users:
+            if r.get('reasons'):
+                try: r['reasons'] = json.loads(r['reasons'])
+                except: r['reasons'] = []
+            if r.get('actions'):
+                try: r['actions'] = json.loads(r['actions'])
+                except: r['actions'] = []
+
+        cursor.close()
+        
+        # Simple extraction of top reasons
+        top_reasons = []
+        reason_counts = {}
+        for r in high_risk_users:
+            if r.get('reasons'):
+                for reason in r['reasons']:
+                    reason_counts[reason] = reason_counts.get(reason, 0) + 1
+        
+        top_reasons = sorted([{"reason": k, "count": v} for k, v in reason_counts.items()], key=lambda x: x["count"], reverse=True)[:3]
+
+        # Business Value Layers: Revenue Impact
+        total_revenue_at_risk = 0
+        total_high_risk_customers = 0
+        total_revenue_saved = 0
+        total_adjusted_revenue_saved = 0
+        total_verified_revenue_saved = 0
+        total_saved_customers = 0
+        total_verified_customers = 0
+        
+        for r in high_risk_users:
+            prob = float(r.get("probability") if r.get("probability") is not None else 1.0)
+            if prob >= 0.7:
+                bal = float(r.get("balance") or 0)
+                revenue_value = bal * 0.03
+                adjusted_value = revenue_value * prob
+                
+                # If saved, count towards saved, else towards at-risk
+                if r.get("saved_status") == 1:
+                    total_revenue_saved += revenue_value
+                    total_adjusted_revenue_saved += adjusted_value
+                    total_saved_customers += 1
+                    
+                    if r.get("validation_status") == 'verified':
+                        total_verified_revenue_saved += adjusted_value
+                        total_verified_customers += 1
+                else:
+                    total_revenue_at_risk += revenue_value
+                    total_high_risk_customers += 1
+                
+        potential_revenue_saved = total_revenue_at_risk * 0.6
+        
+        # Calculate recovered percentage using adjusted pool
+        total_at_risk_pool = total_revenue_at_risk + total_adjusted_revenue_saved
+        recovered_percentage = (total_adjusted_revenue_saved / total_at_risk_pool * 100) if total_at_risk_pool > 0 else 0
+        recovered_percentage = min(100, round(recovered_percentage, 1))
+        
+        verification_rate = (total_verified_revenue_saved / total_adjusted_revenue_saved * 100) if total_adjusted_revenue_saved > 0 else 0
+
+        # Retention Strength Distribution
+        strength_counts = {'Strong': 0, 'Moderate': 0, 'Weak': 0}
+        for r in high_risk_users:
+            if r.get('validation_status') == 'verified':
+                s = r.get('retention_strength')
+                if s in strength_counts:
+                    strength_counts[s] += 1
+        
+        retention_distribution = [
+            {"label": k, "count": v, "pct": round(v / total_verified_customers * 100, 1) if total_verified_customers > 0 else 0}
+            for k, v in strength_counts.items()
+        ]
+        
+        # Retention Loop: Since your last visit
+        last_login = None
+        new_high_risk_since_last_visit = 0
+        if user_id:
+            cursor.execute("SELECT last_login FROM users WHERE id = %s", (user_id,))
+            user_row = cursor.fetchone()
+            if user_row and user_row.get("last_login"):
+                last_login = user_row["last_login"]
+                for r in high_risk_users:
+                    if r["timestamp"] > last_login:
+                        new_high_risk_since_last_visit += 1
+
+        return api_response(data={
             "total_predictions": total,
             "churn_count": churn,
             "stay_count": stay,
@@ -779,10 +1171,25 @@ def stats():
             "stay_pct": round(stay / total * 100, 1) if total else 0,
             "trend": [dict(r) for r in trend],
             "risk_distribution": [dict(r) for r in risk_dist],
+            "high_risk_users": [dict(r) for r in high_risk_users[:10]], # return only top 10 for UI
+            "top_reasons": top_reasons,
+            "revenue_at_risk": round(total_revenue_at_risk, 2),
+            "potential_revenue_saved": round(potential_revenue_saved, 2),
+            "total_high_risk_customers": total_high_risk_customers,
+            "revenue_saved": round(total_revenue_saved, 2),
+            "adjusted_revenue_saved": round(total_adjusted_revenue_saved, 2),
+            "verified_revenue_saved": round(total_verified_revenue_saved, 2),
+            "verification_rate": round(verification_rate, 1),
+            "total_saved_customers": total_saved_customers,
+            "total_verified_customers": total_verified_customers,
+            "retention_distribution": retention_distribution,
+            "recovered_percentage": recovered_percentage,
+            "last_login": last_login,
+            "new_high_risk_since_last_visit": new_high_risk_since_last_visit
         })
     except Exception as e:
         logger.error(f"Stats error: {e}")
-        return jsonify({"error": str(e), "code": 500}), 500
+        return api_response(success=False, message=str(e), code=500)
 
 
 @app.route("/api/health", methods=["GET"])

@@ -8,6 +8,7 @@ All secrets and tunables live here.
 import os
 from dotenv import load_dotenv
 
+
 # Load .env from the backend directory
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
@@ -26,7 +27,7 @@ class Config:
     JWT_ACCESS_TOKEN_EXPIRES_HOURS = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES_HOURS", "24"))
 
     # Database
-    DATABASE_PATH = os.path.join(BASE_DIR, os.getenv("DATABASE_PATH", "churn_history.db"))
+    DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/churnsense")
 
     # Model
     MODEL_PATH = os.path.join(BASE_DIR, os.getenv("MODEL_PATH", "model/churn_model.joblib"))

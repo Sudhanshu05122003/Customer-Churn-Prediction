@@ -6,7 +6,8 @@ Passwords are hashed with bcrypt. Tokens expire per config.
 """
 
 import os
-import sqlite3
+import psycopg2
+import psycopg2.extras
 import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -17,7 +18,7 @@ from flask import request, jsonify, g
 
 from config import Config
 
-DB_PATH = Config.DATABASE_PATH
+DATABASE_URL = Config.DATABASE_URL
 JWT_SECRET = Config.JWT_SECRET_KEY
 JWT_EXPIRY_HOURS = Config.JWT_ACCESS_TOKEN_EXPIRES_HOURS
 
@@ -25,24 +26,45 @@ JWT_EXPIRY_HOURS = Config.JWT_ACCESS_TOKEN_EXPIRES_HOURS
 # ─── Database Setup ────────────────────────────
 def init_auth_db():
     """Create users table if it doesn't exist."""
-    conn = sqlite3.connect(DB_PATH)
+    conn = psycopg2.connect(DATABASE_URL)
+    conn.autocommit = True
+    cursor = conn.cursor()
     # Drop existing table to apply schema change if needed
-    conn.execute("DROP TABLE IF EXISTS users_old") # just in case
+    cursor.execute("DROP TABLE IF EXISTS users_old") # just in case
     
-    conn.execute("""
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            username    TEXT    NOT NULL UNIQUE,
-            email       TEXT    NOT NULL,
+            id          SERIAL PRIMARY KEY,
+            username    VARCHAR(255) NOT NULL UNIQUE,
+            email       VARCHAR(255) NOT NULL,
             password    TEXT    NOT NULL,
             salt        TEXT    NOT NULL,
             organization TEXT,
             created_at  TEXT    NOT NULL,
-            is_active   INTEGER DEFAULT 1
+            is_active   INTEGER DEFAULT 1,
+            plan        VARCHAR(50) DEFAULT 'free',
+            api_calls   INTEGER DEFAULT 0
         )
     """)
+    
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN plan VARCHAR(50) DEFAULT 'free'")
+    except psycopg2.Error:
+        pass
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN api_calls INTEGER DEFAULT 0")
+    except psycopg2.Error:
+        pass
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN last_login TEXT")
+    except psycopg2.Error:
+        pass
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN login_count INTEGER DEFAULT 0")
+    except psycopg2.Error:
+        pass
 
-    conn.commit()
+    cursor.close()
     conn.close()
 
 
@@ -129,28 +151,30 @@ def optional_token(f):
 # ─── User CRUD ─────────────────────────────────
 def register_user(username: str, email: str, password: str, organization: str = None):
     """Register a new user. Returns (user_dict, error_string)."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    conn = psycopg2.connect(DATABASE_URL)
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     # We NO LONGER check for existing email
     
     # Still check for unique username as it's the primary identifier
-    existing = conn.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
+    cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
+    existing = cursor.fetchone()
     if existing:
+        cursor.close()
         conn.close()
         return None, "Username already taken"
 
     hashed, salt = hash_password(password)
 
-    cursor = conn.execute(
+    cursor.execute(
         """INSERT INTO users (username, email, password, salt, organization, created_at)
-           VALUES (?, ?, ?, ?, ?, ?)""",
+           VALUES (%s, %s, %s, %s, %s, %s) RETURNING *""",
         (username, email, hashed, salt, organization, datetime.now(timezone.utc).isoformat()),
     )
-    new_id = cursor.lastrowid
+    user = cursor.fetchone()
     conn.commit()
 
-    user = conn.execute("SELECT * FROM users WHERE id = ?", (new_id,)).fetchone()
+    cursor.close()
     conn.close()
 
     return dict(user), None
@@ -158,19 +182,30 @@ def register_user(username: str, email: str, password: str, organization: str = 
 
 def authenticate_user(email: str, password: str):
     """Authenticate user credentials. Checks all accounts with this email."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    conn = psycopg2.connect(DATABASE_URL)
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     # Fetch ALL users with this email
-    users = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchall()
-    conn.close()
-
-    if not users:
-        return None, "Invalid email or password"
-
+    cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+    users = cursor.fetchall()
+    
     # Try to find a matching password among all users with this email
     for user in users:
         if verify_password(password, user["password"], user["salt"]):
-            return dict(user), None
+            # Update last_login and login_count
+            now_iso = datetime.now(timezone.utc).isoformat()
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE users SET last_login = %s, login_count = COALESCE(login_count, 0) + 1 WHERE id = %s",
+                (now_iso, user["id"])
+            )
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            user_dict = dict(user)
+            user_dict["last_login"] = now_iso # Update dict for current session
+            return user_dict, None
 
+    conn.close()
     return None, "Invalid email or password"

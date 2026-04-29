@@ -51,17 +51,16 @@ export default function LandingPage() {
         <div className={styles.badge}>Next-Gen AI Churn Prediction</div>
         
         <h1 className={styles.title}>
-          Stop Customer Churn <br />
-          Before It Happens
+          Know who will churn before they leave—and stop it.
         </h1>
         
         <p className={styles.subtitle}>
-          Leverage enterprise-grade Machine Learning and SHAP explainability to understand exactly why customers leave and how to keep them.
+          Stop guessing. See exactly how much revenue you’re losing to churn, why your customers are leaving, and the exact actions needed to keep them.
         </p>
         
         <div className={styles.ctaGroup}>
-          <Link href="/register" className="btn-primary" style={{ padding: '16px 32px', fontSize: '1.1rem' }}>
-            Get Started for Free <ChevronRight size={20} />
+          <Link href="/demo" className="btn-primary" style={{ padding: '16px 32px', fontSize: '1.1rem' }}>
+            Try Demo <ChevronRight size={20} />
           </Link>
           <Link href="/login" className={styles.loginBtn}>
             Login to Dashboard

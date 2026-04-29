@@ -170,10 +170,19 @@ export default function PredictPage() {
                 {result.prediction}
               </div>
               <div className={styles.resultMeta}>
-                <span className={styles.resultProb}>{(result.probability * 100).toFixed(1)}%</span>
-                <span className={styles.resultRisk} style={{ color: riskStyle?.color }}>
-                  {result.risk_level} Risk Level
-                </span>
+                {result.risk_level === 'Critical' || result.risk_level === 'High' ? (
+                  <span className={styles.resultRisk} style={{ color: riskStyle?.color }}>
+                    ⚠️ {result.risk_level} Risk: Immediate action recommended
+                  </span>
+                ) : result.risk_level === 'Medium' ? (
+                  <span className={styles.resultRisk} style={{ color: riskStyle?.color }}>
+                    ⚠️ {result.risk_level} Risk: Monitor closely
+                  </span>
+                ) : (
+                  <span className={styles.resultRisk} style={{ color: riskStyle?.color }}>
+                    ✅ Healthy: No immediate action needed
+                  </span>
+                )}
               </div>
             </div>
 
