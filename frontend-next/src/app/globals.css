@@ -4,67 +4,43 @@
    DARK THEME (default)
    ═══════════════════════════════════════════════ */
 :root {
-  --bg-color: #05070a;
-  --bg-gradient-1: rgba(99, 102, 241, 0.15);
-  --bg-gradient-2: rgba(244, 63, 94, 0.1);
+  --bg-color: #030508;
+  --bg-gradient-1: rgba(99, 102, 241, 0.12);
+  --bg-gradient-2: rgba(139, 92, 246, 0.08);
 
-  --card-bg: rgba(15, 23, 42, 0.65);
-  --card-bg-solid: #0f172a;
-  --card-border: rgba(255, 255, 255, 0.08);
-  --card-hover-border: rgba(255, 255, 255, 0.15);
+  --card-bg: rgba(13, 17, 23, 0.6);
+  --card-bg-solid: #0d1117;
+  --card-border: rgba(255, 255, 255, 0.06);
+  --card-hover-border: rgba(99, 102, 241, 0.3);
 
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
-  --text-faint: #475569;
+  --text-faint: #334155;
 
   --primary: #6366f1;
   --primary-hover: #4f46e5;
-  --primary-glow: rgba(99, 102, 241, 0.3);
-  --primary-bg: rgba(99, 102, 241, 0.1);
-  --primary-text: #818cf8;
+  --primary-glow: rgba(99, 102, 241, 0.35);
+  --primary-bg: rgba(99, 102, 241, 0.08);
+  --primary-text: #a5b4fc;
+  
+  --accent: #8b5cf6;
+  --accent-glow: rgba(139, 92, 246, 0.3);
+  --cyan: #06b6d4;
 
   --success: #10b981;
-  --success-bg: rgba(16, 185, 129, 0.12);
+  --success-bg: rgba(16, 185, 129, 0.1);
   --success-text: #34d399;
-  --success-light: #d1fae5;
 
-  --warning: #f59e0b;
-  --warning-bg: rgba(245, 158, 11, 0.12);
-  --warning-text: #fbbf24;
+  --input-bg: rgba(255, 255, 255, 0.02);
+  --input-bg-focus: rgba(255, 255, 255, 0.05);
+  --input-border: rgba(255, 255, 255, 0.06);
 
-  --danger: #ef4444;
-  --danger-bg: rgba(239, 68, 68, 0.12);
-  --danger-text: #f87171;
-  --danger-light: #fca5a5;
+  --glass-blur: blur(16px);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
 
-  --input-bg: rgba(255, 255, 255, 0.03);
-  --input-bg-focus: rgba(255, 255, 255, 0.06);
-  --input-border: rgba(255, 255, 255, 0.08);
-  --input-text: #ffffff;
-  --input-placeholder: #475569;
-  --select-option-bg: #1e293b;
-
-  --table-header-bg: transparent;
-  --table-row-hover: rgba(255, 255, 255, 0.02);
-  --table-border: rgba(255, 255, 255, 0.06);
-
-  --sidebar-bg: rgba(5, 7, 10, 0.5);
-  --sidebar-border: rgba(255, 255, 255, 0.05);
-  --sidebar-section-border: rgba(30, 41, 59, 0.5);
-
-  --glass-blur: blur(12px);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
-
-  --overlay-bg: rgba(0, 0, 0, 0.8);
-  --modal-bg: #0f172a;
-
-  --scrollbar-track: rgba(255, 255, 255, 0.02);
-  --scrollbar-thumb: rgba(255, 255, 255, 0.1);
-  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.2);
-
-  --heading-gradient-from: #fff;
-  --heading-gradient-to: #94a3b8;
+  --heading-gradient-from: #ffffff;
+  --heading-gradient-to: #a5b4fc;
 
   color-scheme: dark;
 }

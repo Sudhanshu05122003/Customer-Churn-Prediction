@@ -6,11 +6,10 @@ import { useEffect, useState } from 'react';
 
 const NavItem = ({ href, icon: Icon, label, active }) => (
   <Link href={href}>
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer ${
-      active 
-        ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/20' 
+    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer ${active
+        ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/20'
         : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/40'
-    }`}>
+      }`}>
       <Icon size={20} />
       <span className="font-medium">{label}</span>
     </div>
@@ -21,11 +20,13 @@ export default function AppLayout({ children }) {
   const pathname = usePathname();
   const [user, setUser] = useState(null);
   const [theme, setTheme] = useState('dark');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const storedUser = localStorage.getItem('user');
     const token = localStorage.getItem('token');
-    
+
     // Protect private routes
     if (!token && !['/', '/login', '/register', '/demo'].includes(pathname)) {
       window.location.href = '/login';
@@ -62,10 +63,10 @@ export default function AppLayout({ children }) {
       {/* Sidebar */}
       <aside className="w-64 glass-card m-4 mr-0 p-6 flex flex-col gap-8 hidden md:flex">
         <Link href="/" className="flex items-center gap-3 px-2 group">
-          <img 
-            src="/logo.png" 
-            alt="ChurnSense Logo" 
-            className="w-10 h-10 object-contain transition-transform group-hover:scale-110" 
+          <img
+            src="/logo.png"
+            alt="ChurnSense Logo"
+            className="w-10 h-10 object-contain transition-transform group-hover:scale-110"
           />
           <span className="text-xl font-bold tracking-tight text-white group-hover:text-indigo-400 transition-colors">ChurnSense</span>
         </Link>
@@ -80,14 +81,16 @@ export default function AppLayout({ children }) {
 
         <div className="pt-6 border-t border-slate-800/50 flex flex-col gap-4">
           {/* Theme Toggle */}
-          <button
-            onClick={toggleTheme}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800/40 transition-all duration-200"
-            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          >
-            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            <span className="font-medium">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-          </button>
+          {mounted && (
+            <button
+              onClick={toggleTheme}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800/40 transition-all duration-200"
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+              <span className="font-medium">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+            </button>
+          )}
 
           {user && (
             <div className="flex items-center gap-3 px-2">
@@ -100,7 +103,7 @@ export default function AppLayout({ children }) {
               </div>
             </div>
           )}
-          <button 
+          <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all duration-200"
           >
