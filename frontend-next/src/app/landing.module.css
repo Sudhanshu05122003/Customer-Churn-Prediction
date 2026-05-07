@@ -23,12 +23,13 @@
 }
 
 .heroLogo {
-  width: 140px;
-  height: 140px;
+  width: 110px;
+  height: 110px;
   object-fit: contain;
-  margin-bottom: 12px;
+  margin-bottom: 24px;
   z-index: 1;
-  filter: drop-shadow(0 0 20px rgba(99, 102, 241, 0.5));
+  filter: drop-shadow(0 0 20px rgba(99, 102, 241, 0.5))
+          drop-shadow(0 0 40px rgba(139, 92, 246, 0.3));
   animation: float 6s ease-in-out infinite;
 }
 
