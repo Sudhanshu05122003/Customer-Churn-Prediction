@@ -46,9 +46,8 @@ export default function LandingPage() {
         <div className={styles.brandStack}>
           <img src="/logo.png" alt="ChurnSense Logo" className={styles.heroLogo} />
           <h2 className={styles.heroBrandName}>ChurnSense</h2>
+          <div className={styles.badge}>Next-Gen AI Churn Prediction</div>
         </div>
-
-        <div className={styles.badge}>Next-Gen AI Churn Prediction</div>
         
         <h1 className={styles.title}>
           Know who will churn before they leave—and stop it.

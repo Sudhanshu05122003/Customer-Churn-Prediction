@@ -2,34 +2,35 @@
 
 /* Hero Section */
 .hero {
-  padding: 120px 24px 80px;
+  padding: 160px 24px 100px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   position: relative;
+  background: radial-gradient(circle at 50% -20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%);
 }
 
 .heroGlow {
   position: absolute;
-  top: -100px;
+  top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 600px;
-  height: 400px;
-  background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+  width: 100vw;
+  height: 600px;
+  background: radial-gradient(circle at 50% 30%, rgba(79, 70, 229, 0.1) 0%, transparent 60%);
   z-index: 0;
   pointer-events: none;
 }
 
 .heroLogo {
-  width: 110px;
-  height: 110px;
+  width: 130px;
+  height: 130px;
   object-fit: contain;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
   z-index: 1;
-  filter: drop-shadow(0 0 20px rgba(99, 102, 241, 0.5))
-          drop-shadow(0 0 40px rgba(139, 92, 246, 0.3));
+  filter: drop-shadow(0 0 30px rgba(99, 102, 241, 0.6))
+          drop-shadow(0 0 60px rgba(139, 92, 246, 0.3));
   animation: float 6s ease-in-out infinite;
 }
 
@@ -47,27 +48,38 @@
 }
 
 .heroBrandName {
-  font-size: 2.5rem;
+  font-size: 5rem;
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.05em;
   color: var(--text-primary);
   margin: 0;
-  background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+  background: linear-gradient(135deg, #ffffff 30%, #dcd6ff 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  line-height: 1;
 }
 
 .badge {
-  background: var(--primary-bg);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  color: var(--primary-text);
-  padding: 6px 16px;
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  color: #a5b4fc;
+  padding: 10px 32px;
   border-radius: 99px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-top: 32px;
   margin-bottom: 24px;
   z-index: 1;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.1);
+  transition: all 0.3s ease;
+}
+
+.badge:hover {
+  border-color: rgba(99, 102, 241, 0.8);
+  box-shadow: 0 0 25px rgba(99, 102, 241, 0.2);
+  transform: scale(1.02);
 }
 
 .title {
