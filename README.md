@@ -1,47 +1,72 @@
-# ChurnSense — Customer Churn Prediction Web Application
+# ChurnSense — Enterprise SaaS Churn Prediction Platform
 
-A portfolio-grade, full-stack web application that predicts customer churn using Machine Learning. Built with a **Flask** backend serving a **Random Forest** model and a modern **Next.js** dashboard.
-
----
-
-## 📁 Project Structure
-
-```
-ChurnSense/
-├── backend/                # Flask API (Render Deployment)
-│   ├── app.py              # Main API server
-│   ├── model.joblib        # Trained ML model
-│   ├── scaler.joblib       # Feature scaler
-│   ├── requirements.txt    # Python dependencies
-│   ├── Procfile            # Render deployment config
-│   └── render.yaml         # Blueprint for render deployment
-└── frontend-next/          # Next.js Application (Vercel Deployment)
-    ├── src/                # React components & logic
-    ├── .env.local          # Local environment variables
-    └── package.json        # Node dependencies
-```
+ChurnSense is a production-grade, full-stack SaaS application that leverages Machine Learning to predict customer churn and provide actionable retention strategies. It features a modern **Next.js** frontend and a robust **Flask** backend with automated ML pipelines.
 
 ---
 
-## 🚀 Deployment Instructions
+## 🌟 Key Features
 
-### 1. Backend (Render)
-- Use the included `render.yaml` blueprint to deploy the Flask API and the PostgreSQL database.
-- Alternatively, you can use **Procfile** (`gunicorn app:app`) if deploying manually. Ensure you add `DATABASE_URL`, `JWT_SECRET_KEY` and `FLASK_SECRET_KEY` as environment variables.
-
-### 2. Frontend (Vercel)
-- **Framework Preset**: `Next.js`
-- **Root Directory**: `frontend-next`
-- **Environment Variables**:
-  - `NEXT_PUBLIC_API_URL`: Set this to your Render backend URL (e.g., `https://churnsense-api.onrender.com`)
+- **Multi-Tenant SaaS Architecture**: Built-in JWT authentication with organization-level data isolation and tiered subscription plans (Free/Pro).
+- **Custom Model Training (AutoML)**: Organizations can upload their own CSV datasets; the platform automatically detects schemas, handles categorical encoding, and trains a dedicated **Random Forest** model.
+- **Explainable AI (SHAP)**: Every prediction includes a feature-level breakdown using SHAP values, visualizing exactly which factors (e.g., balance, tenure) are driving churn risk.
+- **Advanced Retention Engine**: Automatically generates personalized intervention strategies (e.g., "Executive Outreach", "High-Yield Rewards") with projected risk-reduction percentages.
+- **Bulk Analysis**: High-throughput processing for CSV uploads, allowing for batch predictions across thousands of customers simultaneously.
+- **Enterprise Dashboard**: Comprehensive history tracking, real-time statistics, and an interactive onboarding flow for new organizations.
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: Next.js, React, Recharts, Lucide Icons, Vanilla CSS (Glassmorphism)
-- **Backend**: Flask, Gunicorn, Scikit-learn, SHAP, Pydantic, PostgreSQL
-- **Model**: Random Forest Classifier
+### Frontend
+- **Framework**: [Next.js 14](https://nextjs.org/) (App Router)
+- **Styling**: Vanilla CSS with custom properties (Glassmorphism / Dark Mode)
+- **Visuals**: [Recharts](https://recharts.org/) for analytics & [Framer Motion](https://www.framer.com/motion/) for animations
+- **Icons**: [Lucide React](https://lucide.dev/)
+
+### Backend & ML
+- **API**: [Flask](https://flask.palletsprojects.com/) with [Pydantic](https://docs.pydantic.dev/) for strict validation
+- **Database**: [PostgreSQL](https://www.postgresql.org/) for production persistence
+- **Machine Learning**: [Scikit-learn](https://scikit-learn.org/) (Random Forest), [SHAP](https://shap.readthedocs.io/) (Explainability)
+- **Infrastructure**: Gunicorn (WSGI Server), Structured JSON Logging
+
+---
+
+## 📁 Project Structure
+
+```bash
+ChurnSense/
+├── backend/                # Python Flask API
+│   ├── app.py              # Central API logic & Retention Engine
+│   ├── trainer.py          # Custom ML training pipeline
+│   ├── auth.py             # JWT & Postgres auth logic
+│   ├── model.joblib        # Default industry model
+│   ├── custom_models/      # Organization-specific model storage
+│   └── render.yaml         # Infrastructure as Code (Render)
+└── frontend-next/          # React Next.js Dashboard
+    ├── src/app/            # Main pages (Predict, Bulk, History, Train)
+    ├── src/components/     # Shared UI components
+    └── public/             # Static assets & logos
+```
+
+---
+
+## 🚀 Getting Started
+
+### 1. Backend Setup
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python app.py
+```
+
+### 2. Frontend Setup
+```bash
+cd frontend-next
+npm install
+npm run dev
+```
 
 ---
 
