@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { churnApi } from '@/lib/api';
-import { TrendingUp, Users, AlertTriangle, ShieldCheck, Activity, BarChart3, HeartPulse, Bell, ArrowUpRight, DollarSign, Lock, Info } from 'lucide-react';
+import { TrendingUp, Users, AlertTriangle, ShieldCheck, Activity, BarChart3, HeartPulse, Bell, ArrowUpRight, DollarSign, Lock, Info, CheckCircle2, Zap } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, CartesianGrid } from 'recharts';
 import styles from './dashboard.module.css';
 

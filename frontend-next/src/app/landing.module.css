@@ -716,3 +716,471 @@
   .footerInner { flex-direction: column; gap: 20px; text-align: center; }
   .scrollIndicator { display: none; }
 }
+
+/* ─── SIMULATOR SECTION ─── */
+.simulatorSection {
+  position: relative;
+  z-index: 1;
+  padding: 100px 24px;
+  max-width: 1140px;
+  margin: 0 auto;
+}
+
+.simCard {
+  background: rgba(10, 15, 25, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 24px;
+  padding: 40px;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 40px;
+  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.6);
+}
+
+.simForm {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.simGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.simInputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.simInputGroup label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  justify-content: space-between;
+}
+
+.simInputGroup span {
+  color: #6366f1;
+  font-weight: 700;
+}
+
+.simInputGroup input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  outline: none;
+}
+
+.simInputGroup input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #6366f1;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+  transition: transform 0.1s ease;
+}
+
+.simInputGroup input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.simSelect {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #f1f5f9;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.simSelect:focus {
+  border-color: #6366f1;
+}
+
+.simToggles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.simCheckboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #cbd5e1;
+  font-size: 0.85rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.simCheckbox {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.simCheckbox:checked {
+  background: #6366f1;
+  border-color: #6366f1;
+}
+
+.simCheckbox:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.simOutput {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 20px;
+  padding: 40px 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.simOutputHeader {
+  text-align: center;
+  margin-bottom: 24px;
+  z-index: 2;
+}
+
+.simOutputTitle {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+
+.simRiskCircle {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  transition: all 0.4s ease;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.simRiskNum {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+
+.simRiskLabel {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-top: 4px;
+  letter-spacing: 0.05em;
+}
+
+.simRecs {
+  margin-top: 32px;
+  width: 100%;
+  z-index: 2;
+}
+
+.simRecTitle {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #94a3b8;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 8px;
+}
+
+.simRecList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.simRecItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.simRecItemIcon {
+  color: #6366f1;
+}
+
+.simPulse {
+  animation: simRadarPulse 2s infinite ease-out;
+}
+
+@keyframes simRadarPulse {
+  0% { transform: scale(0.95); opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { transform: scale(1.05); opacity: 0.5; }
+}
+
+@media (max-width: 900px) {
+  .simCard {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    padding: 24px;
+  }
+  .simGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* ─── ML PIPELINE SECTION ─── */
+.pipelineSection {
+  position: relative;
+  z-index: 1;
+  padding: 100px 24px;
+  max-width: 1140px;
+  margin: 0 auto;
+}
+
+.pipelineGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+  margin-top: 48px;
+}
+
+.pipelineStepCard {
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 16px;
+  padding: 24px 16px;
+  text-align: center;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.pipelineStepCard:hover {
+  background: rgba(99, 102, 241, 0.04);
+  border-color: rgba(99, 102, 241, 0.2);
+  transform: translateY(-4px);
+}
+
+.pipelineStepBadge {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #818cf8;
+  margin-bottom: 16px;
+}
+
+.pipelineStepTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 8px;
+}
+
+.pipelineStepDesc {
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+/* ─── PRICING SECTION ─── */
+.pricingSection {
+  position: relative;
+  z-index: 1;
+  padding: 100px 24px;
+  max-width: 1140px;
+  margin: 0 auto;
+}
+
+.pricingGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-top: 48px;
+  align-items: stretch;
+}
+
+.pricingCard {
+  background: rgba(10, 15, 25, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  padding: 40px 32px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(12px);
+}
+
+.pricingCard:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
+}
+
+.pricingCardHighlighted {
+  border: 2px solid #6366f1;
+  background: rgba(10, 15, 25, 0.7);
+  box-shadow: 0 20px 50px -10px rgba(99, 102, 241, 0.15);
+}
+
+.popularBadge {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #6366f1;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 6px 18px;
+  border-radius: 99px;
+  letter-spacing: 0.05em;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.pricingTitle {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.pricingSubtitle {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-bottom: 32px;
+}
+
+.pricingPriceArea {
+  margin-bottom: 32px;
+  display: flex;
+  align-items: baseline;
+}
+
+.pricingValue {
+  font-size: 3.2rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+.pricingPeriod {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin-left: 6px;
+}
+
+.pricingList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex-grow: 1;
+}
+
+.pricingItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.9rem;
+  color: #cbd5e1;
+}
+
+.pricingCheck {
+  color: #6366f1;
+  flex-shrink: 0;
+}
+
+.pricingButton {
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #f1f5f9;
+}
+
+.pricingButton:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.pricingButtonPrimary {
+  background: linear-gradient(135deg, #6366f1, #7c3aed);
+  border: none;
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+.pricingButtonPrimary:hover {
+  background: linear-gradient(135deg, #4f46e5, #6d28d9);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+@media (max-width: 900px) {
+  .pipelineGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .pricingGrid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
