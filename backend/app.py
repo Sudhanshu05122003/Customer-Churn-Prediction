@@ -832,7 +832,7 @@ def predict_bulk():
         # Predict each row
         results = []
         for _, row in df.iterrows():
-            features = {c: row[c] for c in Config.FEATURE_COLS}
+            features = {c: (row[c].item() if hasattr(row[c], "item") else row[c]) for c in Config.FEATURE_COLS}
             label, prob, risk, explanation, suggestions, reasons, actions = predict_single(features)
             save_prediction(features, label, prob, risk, source="csv", user_id=user_id, reasons=reasons, actions=actions)
             result_entry = {
@@ -1362,5 +1362,5 @@ def get_sample_data():
 #  RUN
 # ═══════════════════════════════════════════════
 if __name__ == "__main__":
-    logger.info(f"Starting ChurnSense API on http://0.0.0.0:5000")
-    app.run(host="0.0.0.0", port=5000)
+    logger.info(f"Starting ChurnSense API on http://{Config.HOST}:{Config.PORT}")
+    app.run(host=Config.HOST, port=Config.PORT)
