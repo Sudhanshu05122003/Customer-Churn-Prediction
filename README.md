@@ -1,17 +1,20 @@
-# ChurnSense — Enterprise SaaS Churn Prediction Platform
+# ChurnSense — Enterprise SaaS Customer Intelligence Platform
 
-ChurnSense is a production-grade, full-stack SaaS application that leverages Machine Learning to predict customer churn and provide actionable retention strategies. It features a modern **Next.js** frontend and a robust **Flask** backend with automated ML pipelines.
+ChurnSense is a production-grade, full-stack enterprise SaaS platform leveraging Machine Learning to predict customer churn, estimate lifetime value (CLV), flag retention opportunities, and run simulated campaigns.
 
 ---
 
-## 🌟 Key Features
+## 🌟 Key Enterprise Features
 
-- **Multi-Tenant SaaS Architecture**: Built-in JWT authentication with organization-level data isolation and tiered subscription plans (Free/Pro).
-- **Custom Model Training (AutoML)**: Organizations can upload their own CSV datasets; the platform automatically detects schemas, handles categorical encoding, and trains a dedicated **Random Forest** model.
-- **Explainable AI (SHAP)**: Every prediction includes a feature-level breakdown using SHAP values, visualizing exactly which factors (e.g., balance, tenure) are driving churn risk.
-- **Advanced Retention Engine**: Automatically generates personalized intervention strategies (e.g., "Executive Outreach", "High-Yield Rewards") with projected risk-reduction percentages.
-- **Bulk Analysis**: High-throughput processing for CSV uploads, allowing for batch predictions across thousands of customers simultaneously.
-- **Enterprise Dashboard**: Comprehensive history tracking, real-time statistics, and an interactive onboarding flow for new organizations.
+- **Multi-Model AutoML Pipeline**: Trains Random Forest, Gradient Boosting, and Logistic Regression models side-by-side, picking the best model based on F1/Accuracy.
+- **Model Versioning & Registry**: Checkpoint model training runs (v1.0, v2.0) and dynamically roll back to previous active states.
+- **MLOps Drift Detection**: Monitors Kolmogorov-Smirnov statistics on input metrics to detect feature distribution data drift.
+- **Explainable AI (SHAP)**: Renders global feature importances, individual waterfall attributions, and scatter dependence charts.
+- **Data Quality Dashboard**: Scans uploaded CSVs for missing values, outlier values, and duplicate rows, recommending auto-repairs.
+- **Scenario Campaign Simulator & AI Copilot**: Run interactive campaign simulations and query client intelligence in real-time.
+- **Developer Webhooks**: Configure real-time HTTP POST notification callbacks triggered by critical risk score fluctuations.
+- **Audit Logging**: Track authentication logins, model builds, uploads, and campaigns.
+- **REST API Specs**: Complete interactive OpenAPI specifications generated dynamically at `/api/developer/docs`.
 
 ---
 
@@ -19,15 +22,15 @@ ChurnSense is a production-grade, full-stack SaaS application that leverages Mac
 
 ### Frontend
 - **Framework**: [Next.js 14](https://nextjs.org/) (App Router)
-- **Styling**: Vanilla CSS with custom properties (Glassmorphism / Dark Mode)
-- **Visuals**: [Recharts](https://recharts.org/) for analytics & [Framer Motion](https://www.framer.com/motion/) for animations
+- **Styling**: Vanilla CSS (Sleek Dark Mode / Glassmorphism)
+- **Visuals**: [Recharts](https://recharts.org/) for BI charts & analytics
 - **Icons**: [Lucide React](https://lucide.dev/)
 
 ### Backend & ML
-- **API**: [Flask](https://flask.palletsprojects.com/) with [Pydantic](https://docs.pydantic.dev/) for strict validation
-- **Database**: [PostgreSQL](https://www.postgresql.org/) for production persistence
-- **Machine Learning**: [Scikit-learn](https://scikit-learn.org/) (Random Forest), [SHAP](https://shap.readthedocs.io/) (Explainability)
-- **Infrastructure**: Gunicorn (WSGI Server), Structured JSON Logging
+- **API**: [Flask](https://flask.palletsprojects.com/)
+- **Database**: [PostgreSQL](https://www.postgresql.org/)
+- **Machine Learning**: [Scikit-learn](https://scikit-learn.org/), [SHAP](https://shap.readthedocs.io/)
+- **Infrastructure**: Gunicorn, Docker Compose, structured logging
 
 ---
 
@@ -36,39 +39,43 @@ ChurnSense is a production-grade, full-stack SaaS application that leverages Mac
 ```bash
 ChurnSense/
 ├── backend/                # Python Flask API
-│   ├── app.py              # Central API logic & Retention Engine
-│   ├── trainer.py          # Custom ML training pipeline
-│   ├── auth.py             # JWT & Postgres auth logic
-│   ├── model.joblib        # Default industry model
-│   ├── custom_models/      # Organization-specific model storage
-│   └── render.yaml         # Infrastructure as Code (Render)
-└── frontend-next/          # React Next.js Dashboard
-    ├── src/app/            # Main pages (Predict, Bulk, History, Train)
-    ├── src/components/     # Shared UI components
-    └── public/             # Static assets & logos
+│   ├── app.py              # Main API routes
+│   ├── trainer.py          # AutoML comparison pipeline
+│   ├── mlops_tracker.py    # Experiment tracking & data drift metrics
+│   ├── quality_analyzer.py # Data quality profiling
+│   ├── report_generator.py # Executive HTML business report generator
+│   └── test_suite.py       # Automated unit test suite
+├── frontend-next/          # React Next.js Dashboard
+│   ├── src/app/            # Main pages (Dashboard, Quality, Explainability, etc.)
+│   └── src/lib/api.js      # API client wrappers
+├── Dockerfile              # Backend container configuration
+└── docker-compose.yml      # Orchestration composer
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Start (Docker Compose)
 
-### 1. Backend Setup
+Launch the entire stack (PostgreSQL, Flask Backend, and Next.js Frontend) in one command:
+
+```bash
+docker-compose up --build
+```
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:5000`
+
+---
+
+## 🧪 Automated Testing
+
+Validate all authentication, quality analyzers, and marketing campaign endpoints:
+
 ```bash
 cd backend
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-python app.py
-```
-
-### 2. Frontend Setup
-```bash
-cd frontend-next
-npm install
-npm run dev
+python test_suite.py
 ```
 
 ---
 
 ## 📜 License
-MIT License — free for personal and commercial use.
+MIT License.
