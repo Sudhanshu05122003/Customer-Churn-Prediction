@@ -4,14 +4,18 @@ import Link from 'next/link';
 import { churnApi } from '../lib/api';
 
 export default function LandingPage() {
+  // Mobile Menu State
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   // Simulator Input States
   const [gender, setGender] = useState('Female');
-  const [age, setAge] = useState(34);
+  const [age, setAge] = useState('34');
   const [tenure, setTenure] = useState(10);
-  const [creditScore, setCreditScore] = useState(720);
-  const [contractType, setContractType] = useState('Month-to-month');
-  const [balance, setBalance] = useState(12500);
+  const [balance, setBalance] = useState('12500');
+  const [numOfProducts, setNumOfProducts] = useState(1);
+  const [hasCrCard, setHasCrCard] = useState(true);
   const [isActiveMember, setIsActiveMember] = useState(true);
+  const [estimatedSalary, setEstimatedSalary] = useState('50000');
 
   // Prediction API States
   const [loading, setLoading] = useState(false);
@@ -28,12 +32,12 @@ export default function LandingPage() {
         const payload = {
           Gender: gender === 'Female' ? 0 : (gender === 'Male' ? 1 : 2),
           Age: Math.max(18, Math.min(100, parseInt(age) || 34)),
-          Tenure: Math.max(0, Math.min(12, parseInt(tenure) || 0)), // Must be between 0 and 12 according to Pydantic schema
+          Tenure: Math.max(0, Math.min(12, parseInt(tenure) || 0)),
           Balance: Math.max(0.0, parseFloat(balance) || 0.0),
-          NumOfProducts: contractType === 'Month-to-month' ? 1 : (contractType === 'One year' ? 2 : 3),
-          HasCrCard: creditScore > 600 ? 1 : 0,
+          NumOfProducts: Math.max(1, Math.min(100, parseInt(numOfProducts) || 1)),
+          HasCrCard: hasCrCard ? 1 : 0,
           IsActiveMember: isActiveMember ? 1 : 0,
-          EstimatedSalary: 50000.0 // Default
+          EstimatedSalary: Math.max(0.0, parseFloat(estimatedSalary) || 0.0)
         };
 
         const res = await churnApi.predict(payload);
@@ -60,7 +64,7 @@ export default function LandingPage() {
       active = false;
       clearTimeout(timer);
     };
-  }, [gender, age, tenure, creditScore, contractType, balance, isActiveMember]);
+  }, [gender, age, tenure, balance, numOfProducts, hasCrCard, isActiveMember, estimatedSalary]);
 
   // Stats Animation Observer
   useEffect(() => {
@@ -70,20 +74,28 @@ export default function LandingPage() {
         if (entry.isIntersecting) {
           const target = entry.target;
           const val = parseFloat(target.dataset.target);
+          const prefix = target.dataset.prefix || '';
+          const suffix = target.dataset.suffix || '';
           let current = 0;
+          const duration = 1000; // 1s animation duration
+          const stepTime = 30;
+          const steps = duration / stepTime;
+          const increment = val / steps;
+          
           const interval = setInterval(() => {
+            current += increment;
             if (current >= val) {
-              target.innerText = val + '%';
+              target.innerText = prefix + val + suffix;
               clearInterval(interval);
             } else {
-              current += val / 20;
-              target.innerText = current.toFixed(1) + '%';
+              const decimals = val % 1 === 0 ? 0 : 1;
+              target.innerText = prefix + current.toFixed(decimals) + suffix;
             }
-          }, 50);
+          }, stepTime);
           observer.unobserve(target);
         }
       });
-    }, { threshold: 1 });
+    }, { threshold: 0.1 });
 
     stats.forEach(s => observer.observe(s));
     return () => observer.disconnect();
@@ -92,7 +104,7 @@ export default function LandingPage() {
   // Compute values for circular gauge visual preview
   const prob = prediction ? Math.round(prediction.probability * 100) : 30;
   const riskLevel = prediction ? prediction.risk_level : "Medium";
-  const modelType = prediction ? (prediction.model_type === "custom" ? "Custom XGB" : "XGBoost") : "XGBoost";
+  const modelType = prediction ? (prediction.model_type === "custom" ? "Custom XGB" : "XGBoost") : "Random Forest";
   const offset = 552.92 - (552.92 * (prob / 100));
 
   return (
@@ -104,26 +116,48 @@ export default function LandingPage() {
             <img 
               alt="ChurnSense AI Logo" 
               className="h-8 w-8 object-contain" 
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVTfJIV0Bc7kXdTmmh9cW3Fs4FESpEOYry6ZTfx0N-VOyK259NXSwRRdBTy4C0AVEBZ0dlLY43gFZbLCqr4qC2fbEvQs5RnQ1ns3ww5lq5o0t0IHsP_d2x8xQrn3Hqgm4fXUFr6ZoBnYZhjqogimPnco3SPTHyAoxaSf0N42fllpkPwhoEwnoHHVJ2uDlqYnwK8h82vlJhQ6stC3anRqfA0c-os6aKYyKtUmBLvqay7v398USqym3Vj46afQ46XOHpKVY" 
+              src="/logo.png" 
             />
             <span className="text-headline-md font-headline-md font-bold text-primary">ChurnSense AI</span>
           </div>
           <div className="hidden md:flex gap-unit-lg items-center">
             <a className="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#features">Features</a>
-            <a className="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#analytics">Analytics</a>
-            <a className="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#security">Security</a>
+            <a className="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#simulator">Simulator</a>
             <a className="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#pricing">Pricing</a>
-            <a className="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#docs">Documentation</a>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/login" className="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors px-4 py-2">
+            <Link href="/login" className="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors px-4 py-2 hidden sm:inline-block">
               Login
             </Link>
-            <Link href="/demo" className="btn-primary text-white font-label-md text-label-md px-6 py-2.5 rounded-lg">
+            <Link href="/demo" className="btn-primary text-white font-label-md text-label-md px-6 py-2.5 rounded-lg hidden sm:flex">
               Get Started
             </Link>
+            {/* Mobile hamburger button */}
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden flex items-center justify-center p-2 rounded-lg text-on-surface-variant hover:bg-surface-container"
+            >
+              <span className="material-symbols-outlined">{mobileMenuOpen ? 'close' : 'menu'}</span>
+            </button>
           </div>
         </div>
+        {/* Mobile slide-down menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-b border-outline-variant/10 bg-surface px-margin-desktop py-4 flex flex-col gap-4 shadow-lg">
+            <a onClick={() => setMobileMenuOpen(false)} className="font-label-md text-label-md text-on-surface-variant hover:text-primary" href="#features">Features</a>
+            <a onClick={() => setMobileMenuOpen(false)} className="font-label-md text-label-md text-on-surface-variant hover:text-primary" href="#simulator">Simulator</a>
+            <a onClick={() => setMobileMenuOpen(false)} className="font-label-md text-label-md text-on-surface-variant hover:text-primary" href="#pricing">Pricing</a>
+            <hr className="border-outline-variant/20" />
+            <div className="flex items-center justify-between gap-4">
+              <Link onClick={() => setMobileMenuOpen(false)} href="/login" className="font-label-md text-label-md text-on-surface-variant hover:text-primary py-2 w-full text-center">
+                Login
+              </Link>
+              <Link onClick={() => setMobileMenuOpen(false)} href="/demo" className="btn-primary text-white font-label-md text-label-md py-2 w-full text-center justify-center rounded-lg">
+                Get Started
+              </Link>
+            </div>
+          </div>
+        )}
       </nav>
 
       <main className="pt-24 overflow-x-hidden">
@@ -188,29 +222,29 @@ export default function LandingPage() {
                 <div className="space-y-3 px-2">
                   <div className="space-y-1">
                     <div className="flex justify-between text-label-sm font-label-sm">
-                      <span className="">Tenure</span>
-                      <span className="text-primary font-bold">+0.42</span>
+                      <span className="">Age (Older Segment)</span>
+                      <span className="text-primary font-bold">+0.38</span>
                     </div>
                     <div className="w-full h-1.5 bg-surface-variant rounded-full overflow-hidden">
-                      <div className="h-full bg-primary rounded-full" style={{ width: '85%' }}></div>
+                      <div className="h-full bg-primary rounded-full" style={{ width: '76%' }}></div>
                     </div>
                   </div>
                   <div className="space-y-1">
                     <div className="flex justify-between text-label-sm font-label-sm">
-                      <span className="">Monthly Charges</span>
-                      <span className="text-secondary font-bold">+0.28</span>
+                      <span className="">Account Balance</span>
+                      <span className="text-secondary font-bold">+0.22</span>
                     </div>
                     <div className="w-full h-1.5 bg-surface-variant rounded-full overflow-hidden">
-                      <div className="h-full bg-secondary rounded-full" style={{ width: '60%' }}></div>
+                      <div className="h-full bg-secondary rounded-full" style={{ width: '55%' }}></div>
                     </div>
                   </div>
                   <div className="space-y-1">
                     <div className="flex justify-between text-label-sm font-label-sm">
-                      <span className="">Contract Type (Month-to-month)</span>
-                      <span className="text-error font-bold">+0.15</span>
+                      <span className="">Inactive Status</span>
+                      <span className="text-error font-bold">+0.45</span>
                     </div>
                     <div className="w-full h-1.5 bg-surface-variant rounded-full overflow-hidden">
-                      <div className="h-full bg-error rounded-full" style={{ width: '45%' }}></div>
+                      <div className="h-full bg-error rounded-full" style={{ width: '90%' }}></div>
                     </div>
                   </div>
                 </div>
@@ -238,39 +272,39 @@ export default function LandingPage() {
         <section className="bg-surface-container-lowest py-unit-lg border-y border-outline-variant/10">
           <div className="max-w-container-max mx-auto px-margin-desktop grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
             <div className="text-center space-y-1">
-              <p className="text-display-lg font-display-lg text-primary" data-target="98.2">0%</p>
+              <p className="text-display-lg font-display-lg text-primary font-bold" data-target="98.2" data-suffix="%">0%</p>
               <p className="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Accuracy</p>
             </div>
             <div className="text-center space-y-1">
-              <p className="text-display-lg font-display-lg text-primary">125K</p>
+              <p className="text-display-lg font-display-lg text-primary font-bold" data-target="125" data-suffix="K">0K</p>
               <p className="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Users</p>
             </div>
             <div className="text-center space-y-1">
-              <p className="text-display-lg font-display-lg text-primary">45%</p>
+              <p className="text-display-lg font-display-lg text-primary font-bold" data-target="45" data-suffix="%">0%</p>
               <p className="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Reduction</p>
             </div>
             <div className="text-center space-y-1">
-              <p className="text-display-lg font-display-lg text-primary">$4.2M</p>
+              <p className="text-display-lg font-display-lg text-primary font-bold" data-target="4.2" data-prefix="$" data-suffix="M">$0.0M</p>
               <p className="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Savings</p>
             </div>
             <div className="text-center space-y-1">
-              <p className="text-display-lg font-display-lg text-primary">99.9%</p>
+              <p className="text-display-lg font-display-lg text-primary font-bold" data-target="99.9" data-suffix="%">0.0%</p>
               <p className="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Uptime</p>
             </div>
             <div className="text-center space-y-1">
-              <p className="text-display-lg font-display-lg text-primary">200ms</p>
+              <p className="text-display-lg font-display-lg text-primary font-bold" data-target="200" data-suffix="ms">0ms</p>
               <p className="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Latency</p>
             </div>
           </div>
         </section>
 
         {/* Prediction Simulator */}
-        <section className="px-margin-desktop py-unit-xl max-w-container-max mx-auto">
+        <section className="px-margin-desktop py-unit-xl max-w-container-max mx-auto" id="simulator">
           <div className="text-center mb-unit-xl">
             <h2 className="font-headline-lg text-headline-lg text-on-surface">Test the Prediction Engine</h2>
             <p className="font-body-md text-body-md text-on-surface-variant mt-2">Interact with our model in real-time. Adjust parameters to see how risk scores change.</p>
           </div>
-          <div className="glass-panel rounded-[2rem] p-8 lg:p-12 shadow-xl border border-white/50 grid grid-cols-1 lg:grid-cols-12 gap-unit-xl">
+          <div className="glass-panel rounded-[2rem] p-8 lg:p-12 shadow-xl border border-outline-variant/20 grid grid-cols-1 lg:grid-cols-12 gap-unit-xl">
             {/* Inputs */}
             <div className="lg:col-span-7 space-y-8">
               <div className="flex items-center gap-3 mb-6">
@@ -283,7 +317,7 @@ export default function LandingPage() {
                   <label className="block text-label-md font-label-md text-on-surface-variant">Gender &amp; Age</label>
                   <div className="flex gap-4">
                     <select 
-                      className="w-full rounded-lg border-outline-variant/30 bg-surface focus:ring-primary focus:border-primary text-on-surface"
+                      className="w-full h-12 py-3 px-4 rounded-xl border border-outline-variant/30 bg-surface focus:ring-primary focus:border-primary text-on-surface outline-none transition-all"
                       value={gender}
                       onChange={(e) => setGender(e.target.value)}
                     >
@@ -292,50 +326,55 @@ export default function LandingPage() {
                       <option>Other</option>
                     </select>
                     <input 
-                      className="w-24 rounded-lg border-outline-variant/30 bg-surface focus:ring-primary focus:border-primary text-on-surface" 
+                      className="w-24 h-12 py-3 px-4 rounded-xl border border-outline-variant/30 bg-surface focus:ring-primary focus:border-primary text-on-surface outline-none transition-all" 
                       type="number" 
                       min="18"
                       max="100"
                       value={age} 
-                      onChange={(e) => setAge(Math.max(18, Math.min(100, parseInt(e.target.value) || 18)))}
+                      onChange={(e) => setAge(e.target.value)}
                     />
                   </div>
                 </div>
                 {/* Tenure */}
                 <div className="space-y-4">
                   <label className="block text-label-md font-label-md text-on-surface-variant">Tenure (Months): <span className="text-primary font-bold ml-2">{tenure}</span></label>
-                  <input 
-                    className="w-full h-2 bg-surface-variant rounded-lg appearance-none cursor-pointer accent-primary" 
-                    max="12" 
-                    min="0" 
-                    type="range" 
-                    value={tenure} 
-                    onChange={(e) => setTenure(parseInt(e.target.value) || 0)} 
-                  />
+                  <div className="flex items-center h-12">
+                    <input 
+                      className="w-full h-2 bg-surface-variant rounded-lg appearance-none cursor-pointer accent-primary" 
+                      max="12" 
+                      min="0" 
+                      type="range" 
+                      value={tenure} 
+                      onChange={(e) => setTenure(parseInt(e.target.value) || 0)} 
+                    />
+                  </div>
                 </div>
-                {/* Credit Score */}
+                {/* Estimated Salary */}
                 <div className="space-y-4">
-                  <label className="block text-label-md font-label-md text-on-surface-variant">Credit Score: <span className="text-primary font-bold ml-2">{creditScore}</span></label>
-                  <input 
-                    className="w-full h-2 bg-surface-variant rounded-lg appearance-none cursor-pointer accent-primary" 
-                    max="850" 
-                    min="300" 
-                    type="range" 
-                    value={creditScore} 
-                    onChange={(e) => setCreditScore(parseInt(e.target.value) || 0)} 
-                  />
+                  <label className="block text-label-md font-label-md text-on-surface-variant">Estimated Salary</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-outline">$</span>
+                    <input 
+                      className="w-full h-12 pl-8 pr-4 rounded-xl border border-outline-variant/30 bg-surface focus:ring-primary focus:border-primary text-on-surface outline-none transition-all" 
+                      type="number" 
+                      min="0"
+                      value={estimatedSalary} 
+                      onChange={(e) => setEstimatedSalary(e.target.value)} 
+                    />
+                  </div>
                 </div>
-                {/* Contract */}
+                {/* Number of Products */}
                 <div className="space-y-4">
-                  <label className="block text-label-md font-label-md text-on-surface-variant">Contract Type</label>
+                  <label className="block text-label-md font-label-md text-on-surface-variant">Number of Products</label>
                   <select 
-                    className="w-full rounded-lg border-outline-variant/30 bg-surface focus:ring-primary focus:border-primary text-on-surface"
-                    value={contractType}
-                    onChange={(e) => setContractType(e.target.value)}
+                    className="w-full h-12 py-3 px-4 rounded-xl border border-outline-variant/30 bg-surface focus:ring-primary focus:border-primary text-on-surface outline-none transition-all"
+                    value={numOfProducts}
+                    onChange={(e) => setNumOfProducts(parseInt(e.target.value) || 1)}
                   >
-                    <option>Month-to-month</option>
-                    <option>One year</option>
-                    <option>Two year</option>
+                    <option value={1}>1 Product</option>
+                    <option value={2}>2 Products</option>
+                    <option value={3}>3 Products</option>
+                    <option value={4}>4 Products</option>
                   </select>
                 </div>
                 {/* Balance */}
@@ -344,29 +383,47 @@ export default function LandingPage() {
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-outline">$</span>
                     <input 
-                      className="w-full pl-8 rounded-lg border-outline-variant/30 bg-surface focus:ring-primary focus:border-primary text-on-surface" 
+                      className="w-full h-12 pl-8 pr-4 rounded-xl border border-outline-variant/30 bg-surface focus:ring-primary focus:border-primary text-on-surface outline-none transition-all" 
                       type="number" 
                       min="0"
                       value={balance} 
-                      onChange={(e) => setBalance(Math.max(0, parseFloat(e.target.value) || 0))} 
+                      onChange={(e) => setBalance(e.target.value)} 
                     />
                   </div>
                 </div>
-                {/* Active Member */}
-                <div className="flex items-center justify-between p-4 bg-surface rounded-lg border border-outline-variant/20">
-                  <label className="text-label-md font-label-md text-on-surface-variant">Active Member</label>
-                  <input 
-                    checked={isActiveMember} 
-                    onChange={(e) => setIsActiveMember(e.target.checked)} 
-                    className="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary" 
-                    type="checkbox" 
-                  />
+                {/* Toggles Group */}
+                <div className="space-y-4">
+                  <label className="block text-label-md font-label-md text-on-surface-variant">Customer Status</label>
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Has Credit Card */}
+                    <div className="flex items-center justify-between px-4 h-12 bg-surface rounded-xl border border-outline-variant/20 hover:border-primary/30 transition-all">
+                      <label className="text-label-md font-label-md text-on-surface-variant cursor-pointer" htmlFor="hasCrCard">Has Card</label>
+                      <input 
+                        id="hasCrCard"
+                        checked={hasCrCard} 
+                        onChange={(e) => setHasCrCard(e.target.checked)} 
+                        className="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer" 
+                        type="checkbox" 
+                      />
+                    </div>
+                    {/* Active Member */}
+                    <div className="flex items-center justify-between px-4 h-12 bg-surface rounded-xl border border-outline-variant/20 hover:border-primary/30 transition-all">
+                      <label className="text-label-md font-label-md text-on-surface-variant cursor-pointer" htmlFor="isActiveMember">Active</label>
+                      <input 
+                        id="isActiveMember"
+                        checked={isActiveMember} 
+                        onChange={(e) => setIsActiveMember(e.target.checked)} 
+                        className="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer" 
+                        type="checkbox" 
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Outputs */}
-            <div className="lg:col-span-5 bg-primary/5 rounded-2xl p-8 border border-primary/10 flex flex-col items-center justify-center text-center">
+            <div className="lg:col-span-5 bg-surface-container-high/40 backdrop-blur-md rounded-[2rem] p-8 border border-outline-variant/20 flex flex-col items-center justify-center text-center shadow-inner">
               <h3 className="font-headline-md text-headline-md mb-8">Prediction Output</h3>
               <div className="relative w-48 h-48 flex items-center justify-center mb-6">
                 <svg className="w-full h-full -rotate-90">
@@ -393,11 +450,11 @@ export default function LandingPage() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4 w-full mb-8">
-                <div className="text-center bg-white/50 p-3 rounded-lg border border-white/50">
+                <div className="text-center bg-surface/40 p-3 rounded-xl border border-outline-variant/10">
                   <p className="text-label-sm font-label-sm text-on-surface-variant">Confidence</p>
                   <p className="text-headline-md font-bold text-on-surface">98.2%</p>
                 </div>
-                <div className="text-center bg-white/50 p-3 rounded-lg border border-white/50">
+                <div className="text-center bg-surface/40 p-3 rounded-xl border border-outline-variant/10">
                   <p className="text-label-sm font-label-sm text-on-surface-variant">Model</p>
                   <p className="text-headline-md font-bold text-on-surface">{modelType}</p>
                 </div>
@@ -418,21 +475,21 @@ export default function LandingPage() {
                       .filter(s => !s._summary)
                       .slice(0, 2)
                       .map((s, index) => (
-                        <div key={index} className="flex items-start gap-3 p-2 bg-white/40 rounded border border-white/40">
+                        <div key={index} className="flex items-start gap-3 p-3 bg-surface/50 rounded-xl border border-outline-variant/10 shadow-sm">
                           <span className="material-symbols-outlined text-primary text-[18px] mt-0.5">check_circle</span>
                           <div>
                             <span className="text-label-sm font-bold block text-on-surface">{s.action}</span>
-                            <span className="text-xs text-on-surface-variant block">{s.offer}</span>
+                            <span className="text-xs text-on-surface-variant block mt-0.5">{s.offer}</span>
                           </div>
                         </div>
                       ))
                   ) : (
                     <>
-                      <div className="flex items-center gap-3 p-2 bg-white/40 rounded border border-white/40">
+                      <div className="flex items-center gap-3 p-3 bg-surface/50 rounded-xl border border-outline-variant/10 shadow-sm">
                         <span className="material-symbols-outlined text-primary text-[18px]">check_circle</span>
                         <span className="text-label-sm font-label-sm text-on-surface">High-Value Discount (15%)</span>
                       </div>
-                      <div className="flex items-center gap-3 p-2 bg-white/40 rounded border border-white/40">
+                      <div className="flex items-center gap-3 p-3 bg-surface/50 rounded-xl border border-outline-variant/10 shadow-sm">
                         <span className="material-symbols-outlined text-primary text-[18px]">check_circle</span>
                         <span className="text-label-sm font-label-sm text-on-surface">Personalized Success Call</span>
                       </div>
@@ -644,7 +701,7 @@ export default function LandingPage() {
               <img 
                 alt="ChurnSense AI Logo" 
                 className="h-8 w-8 object-contain" 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAyp5bUX7ua2_dKQ1XSXR2K0OA7x-ssf1MIdVVDhgT24oojzFS9fO_ckhbLpk5K-kLkZIEP3dqunzAWkVK1mWD7luipMIt_9X2ty0d0yO0oskT4CPKC6wCtuvQ0erSsGsCS8TTv1DGDQNctylPMlbWF9Fga6zMnVwlf9bvp7Zp8wNT-MsGVBC1wPs2v1MAg6i88LUG_trWW4i9W1fiDb6zs3EoWZgUx9LuMoXdjo-4vgyKRDb5A17VdRLiXlFtbABGFAy4" 
+                src="/logo.png" 
               />
               <span className="text-headline-md font-headline-md font-black text-on-surface">ChurnSense AI</span>
             </div>

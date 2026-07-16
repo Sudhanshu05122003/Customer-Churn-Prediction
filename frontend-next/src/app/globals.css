@@ -296,22 +296,28 @@ h1, h2, h3, h4 {
 .duration-200 { transition-duration: 200ms; }
 
 .glass-panel {
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(195, 198, 215, 0.2);
+    background: var(--card-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--glass-shadow);
+    transition: all 0.3s ease;
+}
+.glass-panel:hover {
+    border-color: var(--card-hover-border);
 }
 .text-gradient {
-    background: linear-gradient(135deg, #004ac6 0%, #4b41e1 100%);
+    background: linear-gradient(135deg, var(--heading-gradient-from) 0%, var(--heading-gradient-to) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 .btn-primary {
-    background: linear-gradient(135deg, #004ac6 0%, #4b41e1 100%);
-    box-shadow: 0 4px 15px rgba(0, 74, 198, 0.2);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    box-shadow: 0 4px 15px var(--primary-glow);
     transition: all 0.2s ease-out;
 }
 .btn-primary:hover {
-    box-shadow: 0 6px 20px rgba(0, 74, 198, 0.3);
+    box-shadow: 0 6px 20px var(--primary-glow);
     transform: translateY(-1px);
 }
 .circular-gauge {
