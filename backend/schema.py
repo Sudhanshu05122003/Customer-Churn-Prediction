@@ -69,6 +69,7 @@ class RegisterRequest(BaseModel):
     email: str = Field(..., min_length=5, max_length=100)
     password: str = Field(..., min_length=6, max_length=128)
     organization: Optional[str] = Field(None, max_length=100)
+    industry: Optional[str] = Field("SaaS", max_length=100)
 
 
 class LoginRequest(BaseModel):

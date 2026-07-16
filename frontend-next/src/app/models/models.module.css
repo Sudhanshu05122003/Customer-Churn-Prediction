@@ -1,0 +1,270 @@
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 28px;
+}
+
+.heading {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.subheading {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.alert {
+  padding: 12px 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.alertSuccess {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.alertError {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 12px;
+}
+
+.tab {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+}
+
+.activeTab {
+  background: var(--primary-bg);
+  color: var(--primary);
+}
+
+.activeTab:hover {
+  background: var(--primary-bg);
+  color: var(--primary);
+}
+
+.card {
+  background: var(--card-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+}
+
+.cardHeader h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  flex: 1;
+}
+
+.activeIcon {
+  color: var(--primary);
+}
+
+.refreshBtn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--card-border);
+  color: var(--text-secondary);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.refreshBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  padding: 12px 16px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.table td {
+  padding: 16px;
+  border-bottom: 1px solid var(--card-border);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.activeRow {
+  background: rgba(99, 102, 241, 0.02);
+}
+
+.vNum {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.activeLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #10b981;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.activateBtn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.activateBtn:hover {
+  opacity: 0.9;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  color: var(--text-muted);
+  gap: 12px;
+  text-align: center;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 480px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.select {
+  background: var(--input-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.select:focus {
+  border-color: var(--primary);
+}
+
+.scheduleInfo {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.infoHint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.saveBtn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.saveBtn:hover {
+  opacity: 0.9;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

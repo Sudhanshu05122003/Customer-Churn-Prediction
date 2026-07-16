@@ -79,9 +79,12 @@ export const churnApi = {
   toggleSavedStatus: (id) => apiRequest(`/history/${id}/save`, {
     method: 'POST',
   }),
-  bulkPredict: (file) => {
+  bulkPredict: (file, mapping = null) => {
     const formData = new FormData();
     formData.append('file', file);
+    if (mapping) {
+      formData.append('mapping', JSON.stringify(mapping));
+    }
     
     const token = localStorage.getItem('token');
     const headers = {};
@@ -141,6 +144,83 @@ export const churnApi = {
         }
         return typeof payload.success === 'boolean' ? payload.data : payload;
     });
-  }
+  },
+  simulateCampaign: (params) => apiRequest('/api/simulate', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  }),
+  askCopilot: (query) => apiRequest('/api/copilot', {
+    method: 'POST',
+    body: JSON.stringify({ query }),
+  }),
+  getModelVersions: () => apiRequest('/api/models/versions', {
+    method: 'GET',
+  }),
+  activateModelVersion: (version) => apiRequest('/api/models/activate', {
+    method: 'POST',
+    body: JSON.stringify({ version }),
+  }),
+  getAuditLogs: () => apiRequest('/api/audit-logs', {
+    method: 'GET',
+  }),
+  analyzeQuality: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const token = localStorage.getItem('token');
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    return fetch(`${API_BASE}/api/quality/analyze`, {
+      method: 'POST',
+      body: formData,
+      headers,
+    }).then(async res => {
+      const payload = await res.json();
+      if (!res.ok || (typeof payload.success === 'boolean' && !payload.success)) {
+        throw new Error(payload.message || payload.error || 'API error');
+      }
+      return typeof payload.success === 'boolean' ? payload.data : payload;
+    });
+  },
+  syncIntegration: (integration) => apiRequest('/api/integrations/sync', {
+    method: 'POST',
+    body: JSON.stringify({ integration }),
+  }),
+  getTeamMembers: () => apiRequest('/api/team', {
+    method: 'GET',
+  }),
+  inviteTeamMember: (member) => apiRequest('/api/team', {
+    method: 'POST',
+    body: JSON.stringify(member),
+  }),
+  getOrgSettings: () => apiRequest('/api/org-settings', {
+    method: 'GET',
+  }),
+  updateOrgSettings: (settings) => apiRequest('/api/org-settings', {
+    method: 'POST',
+    body: JSON.stringify(settings),
+  }),
+  getCampaigns: () => apiRequest('/api/campaigns', {
+    method: 'GET',
+  }),
+  launchCampaign: (campaign) => apiRequest('/api/campaigns', {
+    method: 'POST',
+    body: JSON.stringify(campaign),
+  }),
+  getWebhooks: () => apiRequest('/api/webhooks', {
+    method: 'GET',
+  }),
+  registerWebhook: (webhook) => apiRequest('/api/webhooks', {
+    method: 'POST',
+    body: JSON.stringify(webhook),
+  }),
+  getDriftMetrics: () => apiRequest('/api/mlops/drift', {
+    method: 'GET',
+  }),
+  getMlopsExperiments: () => apiRequest('/api/mlops/experiments', {
+    method: 'GET',
+  })
 };
 

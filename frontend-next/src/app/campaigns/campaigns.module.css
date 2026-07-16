@@ -1,0 +1,257 @@
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 28px;
+}
+
+.heading {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.subheading {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: var(--card-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 24px;
+  height: fit-content;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+}
+
+.cardHeader h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  flex: 1;
+}
+
+.activeIcon {
+  color: var(--primary);
+}
+
+.refreshBtn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--card-border);
+  color: var(--text-secondary);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.refreshBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.campaignList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.campaignItem {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.cHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.cName {
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.cStatus {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.cMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+}
+
+.metricsRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.15);
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.metric span {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.metric strong {
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.input {
+  background: var(--input-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--primary);
+}
+
+.select {
+  background: var(--input-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.select:focus {
+  border-color: var(--primary);
+}
+
+.submitBtn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 0.2s;
+}
+
+.submitBtn:hover {
+  opacity: 0.9;
+}
+
+.alert {
+  padding: 12px 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.alertSuccess {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.alertError {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  color: var(--text-muted);
+  gap: 12px;
+  text-align: center;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

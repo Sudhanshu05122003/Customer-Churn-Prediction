@@ -1,0 +1,100 @@
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 28px;
+}
+
+.heading {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.subheading {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.card {
+  background: var(--card-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+}
+
+.cardHeader h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.activeIcon {
+  color: var(--primary);
+}
+
+.specBox {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.block {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.codeBlock {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 16px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: #10b981;
+  overflow-x: auto;
+  margin: 0;
+}
+
+.snippetsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .snippetsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.snippet {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.snippet h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}

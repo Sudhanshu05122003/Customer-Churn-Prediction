@@ -1,0 +1,182 @@
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 28px;
+}
+
+.heading {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.subheading {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.previewContainer {
+  display: flex;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+.phoneFrame {
+  width: 320px;
+  height: 640px;
+  background: #090d16;
+  border: 12px solid #1e293b;
+  border-radius: 40px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  position: relative;
+}
+
+.phoneScreen {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.statusBar {
+  height: 24px;
+  padding: 0 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #64748b;
+  background: #0f172a;
+}
+
+.statusIcons {
+  display: flex;
+  gap: 6px;
+}
+
+.appHeader {
+  padding: 16px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #1e293b;
+  background: #0f172a;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+}
+
+.appTitle {
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: white;
+  letter-spacing: -0.02em;
+}
+
+.appSubtitle {
+  font-size: 0.7rem;
+  color: #6366f1;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.bell {
+  color: #64748b;
+  cursor: pointer;
+}
+
+.mobileBody {
+  flex: 1;
+  padding: 18px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.metricCard {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.metricLabel {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.metricValRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.metricVal {
+  font-size: 2rem;
+  color: white;
+}
+
+.trendDown {
+  color: #10b981;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.sectionTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.alertList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.alertItem {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.alertHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.alertId {
+  font-size: 0.9rem;
+  color: white;
+}
+
+.alertRisk {
+  font-size: 0.75rem;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.alertMeta {
+  font-size: 0.75rem;
+  color: #64748b;
+}

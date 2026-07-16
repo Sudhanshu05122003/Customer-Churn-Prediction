@@ -129,3 +129,51 @@
   transition: all 0.2s;
 }
 .resetBtn:hover { background: var(--input-bg-focus); border-color: var(--card-hover-border); }
+
+.mapperCard {
+  background: var(--card-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.mapperSubtitle {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+.mapperGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+@media (max-width: 600px) {
+  .mapperGrid {
+    grid-template-columns: 1fr;
+  }
+}
+.mapperField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mapperLabel {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.mapperSelect {
+  background: var(--input-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 0.875rem;
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+.mapperSelect:focus {
+  border-color: var(--primary);
+}

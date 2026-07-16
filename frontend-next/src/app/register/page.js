@@ -9,7 +9,7 @@ import styles from '../login/login.module.css';
 export default function RegisterPage() {
   const { register } = useAuth();
   const router = useRouter();
-  const [form, setForm] = useState({ username: '', email: '', password: '', organization: '' });
+  const [form, setForm] = useState({ username: '', email: '', password: '', organization: '', industry: 'SaaS' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -20,8 +20,8 @@ export default function RegisterPage() {
     setError('');
     setLoading(true);
     try {
-      await register(form.username, form.email, form.password, form.organization);
-      router.push('/onboarding');
+      await register(form.username, form.email, form.password, form.organization, form.industry);
+      router.push('/dashboard'); // Go directly to dashboard
     } catch (err) {
       setError(err.message || 'Registration failed');
     } finally {
@@ -39,7 +39,7 @@ export default function RegisterPage() {
         </div>
 
         <h1 className={styles.title}>Create account</h1>
-        <p className={styles.subtitle}>Get started with AI-powered churn prediction</p>
+        <p className={styles.subtitle}>Get started with AI Customer Intelligence</p>
 
         {error && <div className={styles.errorBanner}>{error}</div>}
 
@@ -73,6 +73,31 @@ export default function RegisterPage() {
             <div className={styles.inputWrap}>
               <Building2 size={18} className={styles.inputIcon} />
               <input id="register-org" type="text" value={form.organization} onChange={update('organization')} placeholder="Acme Corp" className={styles.input} />
+            </div>
+          </div>
+
+          <div className={styles.field}>
+            <label className={styles.label}>Industry Sector</label>
+            <div className={styles.inputWrap}>
+              <Zap size={18} className={styles.inputIcon} />
+              <select 
+                id="register-industry" 
+                value={form.industry} 
+                onChange={update('industry')} 
+                className={styles.input} 
+                style={{ appearance: 'none', background: 'transparent', outline: 'none', border: 'none', width: '100%', color: 'inherit', paddingRight: '20px' }}
+              >
+                <option value="SaaS" style={{background: '#1e293b'}}>💼 SaaS</option>
+                <option value="Banking" style={{background: '#1e293b'}}>🏦 Banking</option>
+                <option value="E-commerce" style={{background: '#1e293b'}}>🛒 E-commerce</option>
+                <option value="OTT/Streaming" style={{background: '#1e293b'}}>📺 OTT / Streaming</option>
+                <option value="Telecom" style={{background: '#1e293b'}}>📡 Telecom</option>
+                <option value="Healthcare" style={{background: '#1e293b'}}>🏥 Healthcare</option>
+                <option value="EdTech" style={{background: '#1e293b'}}>🎓 EdTech</option>
+                <option value="Travel" style={{background: '#1e293b'}}>✈️ Travel</option>
+                <option value="Hospitality" style={{background: '#1e293b'}}>🏨 Hospitality</option>
+                <option value="Manufacturing" style={{background: '#1e293b'}}>🏢 Manufacturing</option>
+              </select>
             </div>
           </div>
 

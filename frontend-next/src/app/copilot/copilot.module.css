@@ -1,0 +1,265 @@
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 100px);
+}
+
+.header {
+  margin-bottom: 20px;
+}
+
+.heading {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.subheading {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.chatArea {
+  flex: 1;
+  background: var(--card-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.messagesWrap {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.message {
+  display: flex;
+  gap: 16px;
+  max-width: 80%;
+  animation: fadeIn 0.25s ease;
+}
+
+.bot {
+  align-self: flex-start;
+}
+
+.user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--primary-bg);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.user .avatar {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.msgBody {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--card-border);
+  padding: 14px 18px;
+  border-radius: 16px;
+}
+
+.bot .msgBody {
+  border-top-left-radius: 4px;
+}
+
+.user .msgBody {
+  border-top-right-radius: 4px;
+  background: var(--primary);
+  color: white;
+  border: none;
+}
+
+.msgText {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.resultsTableWrap {
+  margin-top: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.2);
+  width: 100%;
+}
+
+.resultsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.resultsTable th {
+  text-align: left;
+  padding: 10px 14px;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.02);
+  font-weight: 600;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.resultsTable td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--card-border);
+  color: var(--text-primary);
+}
+
+.resultsTable tr:last-child td {
+  border-bottom: none;
+}
+
+.segmentTag {
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  font-size: 0.8rem;
+}
+
+.clvCell {
+  font-variant-numeric: tabular-nums;
+}
+
+.pBadge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.p1 {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.p2 {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.inputArea {
+  padding: 20px 24px;
+  border-top: 1px solid var(--card-border);
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.samples {
+  margin-bottom: 16px;
+}
+
+.sampleTitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.sampleGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sampleBtn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--card-border);
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sampleBtn:hover {
+  background: var(--input-bg-focus);
+  color: var(--text-primary);
+  border-color: var(--card-hover-border);
+}
+
+.form {
+  display: flex;
+  gap: 12px;
+}
+
+.input {
+  flex: 1;
+  background: var(--input-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text-primary);
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  border-color: var(--primary);
+}
+
+.sendBtn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 0 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+
+.sendBtn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.sendBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+  color: var(--primary);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -40,6 +40,7 @@ def init_auth_db():
             password    TEXT    NOT NULL,
             salt        TEXT    NOT NULL,
             organization TEXT,
+            industry    VARCHAR(100) DEFAULT 'SaaS',
             created_at  TEXT    NOT NULL,
             is_active   INTEGER DEFAULT 1,
             plan        VARCHAR(50) DEFAULT 'free',
@@ -63,6 +64,10 @@ def init_auth_db():
         cursor.execute("ALTER TABLE users ADD COLUMN login_count INTEGER DEFAULT 0")
     except psycopg2.Error:
         pass
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN industry VARCHAR(100) DEFAULT 'SaaS'")
+    except psycopg2.Error:
+        pass
 
     cursor.close()
     conn.close()
@@ -84,12 +89,13 @@ def verify_password(password: str, stored_hash: str, salt: str) -> bool:
 
 
 # ─── JWT Token Management ──────────────────────
-def create_token(user_id: int, email: str, username: str) -> str:
+def create_token(user_id: int, email: str, username: str, industry: str = "SaaS") -> str:
     """Generate a JWT access token."""
     payload = {
         "user_id": user_id,
         "email": email,
         "username": username,
+        "industry": industry,
         "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRY_HOURS),
         "iat": datetime.now(timezone.utc),
     }
@@ -149,7 +155,7 @@ def optional_token(f):
 
 
 # ─── User CRUD ─────────────────────────────────
-def register_user(username: str, email: str, password: str, organization: str = None):
+def register_user(username: str, email: str, password: str, organization: str = None, industry: str = "SaaS"):
     """Register a new user. Returns (user_dict, error_string)."""
     conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -167,9 +173,9 @@ def register_user(username: str, email: str, password: str, organization: str = 
     hashed, salt = hash_password(password)
 
     cursor.execute(
-        """INSERT INTO users (username, email, password, salt, organization, created_at)
-           VALUES (%s, %s, %s, %s, %s, %s) RETURNING *""",
-        (username, email, hashed, salt, organization, datetime.now(timezone.utc).isoformat()),
+        """INSERT INTO users (username, email, password, salt, organization, industry, created_at)
+           VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING *""",
+        (username, email, hashed, salt, organization, industry, datetime.now(timezone.utc).isoformat()),
     )
     user = cursor.fetchone()
     conn.commit()
@@ -199,6 +205,14 @@ def authenticate_user(email: str, password: str):
                 "UPDATE users SET last_login = %s, login_count = COALESCE(login_count, 0) + 1 WHERE id = %s",
                 (now_iso, user["id"])
             )
+            
+            # Log audit
+            try:
+                from audit import log_audit_action
+                log_audit_action(conn, user["id"], "USER_LOGIN", {"email": email, "ip": "127.0.0.1"})
+            except Exception:
+                pass
+                
             conn.commit()
             cursor.close()
             conn.close()

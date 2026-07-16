@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Zap, History, Upload, LogOut, User, Brain, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Zap, History, Upload, LogOut, User, Brain, Sun, Moon, Activity, MessageSquare, GitBranch, Shield, Sparkles, LineChart, Percent, Webhook, Smartphone, Server, Terminal } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const NavItem = ({ href, icon: Icon, label, active }) => (
@@ -75,7 +75,19 @@ export default function AppLayout({ children }) {
           <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" active={pathname === '/dashboard'} />
           <NavItem href="/predict" icon={Zap} label="Predict" active={pathname === '/predict'} />
           <NavItem href="/train" icon={Brain} label="Train Model" active={pathname === '/train'} />
+          <NavItem href="/models" icon={GitBranch} label="Models" active={pathname === '/models'} />
           <NavItem href="/bulk" icon={Upload} label="Bulk Analysis" active={pathname === '/bulk'} />
+          <NavItem href="/explainability" icon={LineChart} label="Explainability" active={pathname === '/explainability'} />
+          <NavItem href="/quality" icon={Percent} label="Data Quality" active={pathname === '/quality'} />
+          <NavItem href="/executive" icon={Server} label="Executive BI" active={pathname === '/executive'} />
+          <NavItem href="/simulator" icon={Activity} label="Simulator" active={pathname === '/simulator'} />
+          <NavItem href="/copilot" icon={MessageSquare} label="AI Copilot" active={pathname === '/copilot'} />
+          <NavItem href="/integrations" icon={Sparkles} label="Integrations" active={pathname === '/integrations'} />
+          <NavItem href="/webhooks" icon={Webhook} label="Webhooks" active={pathname === '/webhooks'} />
+          <NavItem href="/mlops" icon={GitBranch} label="MLOps Registry" active={pathname === '/mlops'} />
+          <NavItem href="/mobile" icon={Smartphone} label="Mobile App" active={pathname === '/mobile'} />
+          <NavItem href="/docs" icon={Terminal} label="API Docs" active={pathname === '/docs'} />
+          <NavItem href="/audit-logs" icon={Shield} label="Audit Logs" active={pathname === '/audit-logs'} />
           <NavItem href="/history" icon={History} label="History" active={pathname === '/history'} />
         </nav>
 

@@ -11,7 +11,51 @@ export default function BulkPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+  const [headers, setHeaders] = useState([]);
+  const [columnMapping, setColumnMapping] = useState({});
+  const [mappingRequired, setMappingRequired] = useState(false);
   const inputRef = useRef();
+
+  const parseHeaders = (selectedFile) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target.result;
+        const firstLine = text.split('\n')[0];
+        const cols = firstLine.split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
+        setHeaders(cols);
+        
+        // Auto-map matching columns
+        const initialMap = {};
+        const expected = [
+          { key: 'CustomerID', terms: ['id', 'customer', 'cust', 'user'] },
+          { key: 'Gender', terms: ['gender', 'sex'] },
+          { key: 'Age', terms: ['age', 'dob', 'years'] },
+          { key: 'Tenure', terms: ['tenure', 'months', 'active', 'period'] },
+          { key: 'Balance', terms: ['balance', 'revenue', 'spend', 'val', 'order', 'aov', 'mrr'] },
+          { key: 'NumOfProducts', terms: ['product', 'products', 'count', 'items', 'seats'] },
+          { key: 'HasCrCard', terms: ['card', 'visa', 'credit', 'autopay', 'card'] },
+          { key: 'IsActiveMember', terms: ['active', 'status', 'member', 'login', 'dau'] },
+          { key: 'EstimatedSalary', terms: ['salary', 'income', 'contract', 'value', 'acv'] }
+        ];
+        
+        expected.forEach(exp => {
+          const match = cols.find(c => {
+            const l = c.toLowerCase();
+            return exp.terms.some(t => l.includes(t)) || l === exp.key.toLowerCase();
+          });
+          if (match) {
+            initialMap[match] = exp.key;
+          }
+        });
+        setColumnMapping(initialMap);
+        setMappingRequired(true);
+      } catch (err) {
+        console.error('Failed to parse headers', err);
+      }
+    };
+    reader.readAsText(selectedFile);
+  };
 
   const handleDrop = (e) => {
     e.preventDefault();
@@ -20,6 +64,7 @@ export default function BulkPage() {
     if (dropped && dropped.name.endsWith('.csv')) {
       setFile(dropped);
       setError('');
+      parseHeaders(dropped);
     } else {
       setError('Please upload a .csv file');
     }
@@ -30,6 +75,7 @@ export default function BulkPage() {
     if (selected) {
       setFile(selected);
       setError('');
+      parseHeaders(selected);
     }
   };
 
@@ -39,7 +85,7 @@ export default function BulkPage() {
     setError('');
     setResult(null);
     try {
-      const data = await churnApi.bulkPredict(file);
+      const data = await churnApi.bulkPredict(file, columnMapping);
       if (data.error) throw new Error(data.error);
       setResult(data);
     } catch (err) {
@@ -53,6 +99,9 @@ export default function BulkPage() {
     setFile(null);
     setResult(null);
     setError('');
+    setHeaders([]);
+    setColumnMapping({});
+    setMappingRequired(false);
   };
 
   const riskCounts = {};
@@ -103,6 +152,54 @@ export default function BulkPage() {
               </>
             )}
           </div>
+
+          {mappingRequired && headers.length > 0 && (
+            <div className={styles.mapperCard}>
+              <h3 style={{fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px'}}>🛠️ Map CSV Columns</h3>
+              <p className={styles.mapperSubtitle}>Link your CSV columns to core customer features to enable analysis:</p>
+              <div className={styles.mapperGrid}>
+                {[
+                  { key: 'CustomerID', label: 'Customer ID' },
+                  { key: 'Gender', label: 'Gender' },
+                  { key: 'Age', label: 'Age' },
+                  { key: 'Tenure', label: 'Tenure (Months)' },
+                  { key: 'Balance', label: 'Balance / Revenue' },
+                  { key: 'NumOfProducts', label: 'Products Count' },
+                  { key: 'HasCrCard', label: 'Has Card / Autopay' },
+                  { key: 'IsActiveMember', label: 'Is Active User' },
+                  { key: 'EstimatedSalary', label: 'Estimated Salary / Income' }
+                ].map(field => {
+                  const mappedCol = Object.keys(columnMapping).find(k => columnMapping[k] === field.key) || '';
+                  
+                  return (
+                    <div key={field.key} className={styles.mapperField}>
+                      <span className={styles.mapperLabel}>{field.label}</span>
+                      <select 
+                        value={mappedCol} 
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const newMap = { ...columnMapping };
+                          Object.keys(newMap).forEach(k => {
+                            if (newMap[k] === field.key) delete newMap[k];
+                          });
+                          if (val) {
+                            newMap[val] = field.key;
+                          }
+                          setColumnMapping(newMap);
+                        }}
+                        className={styles.mapperSelect}
+                      >
+                        <option value="">-- Ignore / Skip --</option>
+                        {headers.map(h => (
+                          <option key={h} value={h}>{h}</option>
+                        ))}
+                      </select>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <button
             id="bulk-upload-submit"

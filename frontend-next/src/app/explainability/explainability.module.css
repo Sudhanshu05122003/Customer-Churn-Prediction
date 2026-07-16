@@ -1,0 +1,203 @@
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 28px;
+}
+
+.heading {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.subheading {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 12px;
+}
+
+.tab {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+}
+
+.activeTab {
+  background: var(--primary-bg);
+  color: var(--primary);
+}
+
+.card {
+  background: var(--card-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+}
+
+.cardHeader h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.tabDesc {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+.searchForm {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.input {
+  flex: 1;
+  background: var(--input-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--primary);
+}
+
+.searchBtn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 0 20px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.searchPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  color: var(--text-muted);
+  gap: 12px;
+  text-align: center;
+}
+
+.resultWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  border-top: 1px solid var(--card-border);
+  padding-top: 20px;
+}
+
+.scoreRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.scoreLabel {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.scoreVal {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin: 4px 0 0 0;
+}
+
+.riskBadge {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.waterfallWrap {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.waterfallTitle {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 12px;
+}
+
+.waterfallList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.waterfallItem {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.factorName {
+  color: var(--text-secondary);
+}
+
+.factorVal {
+  font-weight: 700;
+}
+
+.plus {
+  color: #ef4444;
+}
+
+.minus {
+  color: #10b981;
+}

@@ -1,0 +1,143 @@
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 28px;
+}
+
+.heading {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.subheading {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.switchBtn {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.switchBtn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.activeSwitch {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.activeSwitch:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.card {
+  background: var(--card-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+}
+
+.cardHeader h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.activeIcon {
+  color: var(--primary);
+}
+
+.panelContent {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.metricsRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .metricsRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.miniCard {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.miniCard span {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.miniCard strong {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+}
+
+.chartWrap {
+  background: rgba(0, 0, 0, 0.15);
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--card-border);
+}
+
+.chartWrap h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: var(--text-primary);
+}
+
+.desc {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}

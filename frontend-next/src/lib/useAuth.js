@@ -32,8 +32,8 @@ export function useAuth() {
     return data;
   }, []);
 
-  const register = useCallback(async (username, email, password, organization) => {
-    const data = await authApi.register({ username, email, password, organization });
+  const register = useCallback(async (username, email, password, organization, industry = 'SaaS') => {
+    const data = await authApi.register({ username, email, password, organization, industry });
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
     setUser(data.user);

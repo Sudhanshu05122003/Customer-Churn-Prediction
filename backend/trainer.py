@@ -20,8 +20,9 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, roc_auc_score, classification_report
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, classification_report
 import joblib
 
 logger = logging.getLogger("churnsense")
@@ -35,6 +36,59 @@ def get_model_dir(org_id):
     model_dir = os.path.join(CUSTOM_MODELS_DIR, str(org_id))
     os.makedirs(model_dir, exist_ok=True)
     return model_dir
+
+
+def save_model_version(org_id, model, scaler, encoders, metadata):
+    """Save a model version under the versions subdirectory and set as active."""
+    model_dir = get_model_dir(org_id)
+    versions_dir = os.path.join(model_dir, "versions")
+    os.makedirs(versions_dir, exist_ok=True)
+    
+    existing = [d for d in os.listdir(versions_dir) if os.path.isdir(os.path.join(versions_dir, d)) and d.startswith("v")]
+    v_num = len(existing) + 1
+    version_name = f"v{v_num}.0"
+    
+    v_dir = os.path.join(versions_dir, version_name)
+    os.makedirs(v_dir, exist_ok=True)
+    
+    joblib.dump(model, os.path.join(v_dir, "model.joblib"))
+    joblib.dump(scaler, os.path.join(v_dir, "scaler.joblib"))
+    if encoders:
+        joblib.dump(encoders, os.path.join(v_dir, "encoders.joblib"))
+        
+    metadata["version"] = version_name
+    metadata["is_active"] = True
+    
+    with open(os.path.join(v_dir, "metadata.json"), "w") as f:
+        json.dump(metadata, f, indent=2)
+        
+    # Copy to root (active)
+    joblib.dump(model, os.path.join(model_dir, "model.joblib"))
+    joblib.dump(scaler, os.path.join(model_dir, "scaler.joblib"))
+    if encoders:
+        joblib.dump(encoders, os.path.join(model_dir, "encoders.joblib"))
+    else:
+        encoders_path = os.path.join(model_dir, "encoders.joblib")
+        if os.path.exists(encoders_path):
+            os.remove(encoders_path)
+            
+    # Set other versions to inactive
+    for d in existing:
+        m_path = os.path.join(versions_dir, d, "metadata.json")
+        if os.path.exists(m_path):
+            try:
+                with open(m_path, "r") as f:
+                    m = json.load(f)
+                m["is_active"] = False
+                with open(m_path, "w") as f:
+                    json.dump(m, f, indent=2)
+            except Exception:
+                pass
+                
+    with open(os.path.join(model_dir, "metadata.json"), "w") as f:
+        json.dump(metadata, f, indent=2)
+        
+    return version_name
 
 
 def analyze_columns(df):
@@ -202,47 +256,84 @@ def train_custom_model(df, feature_cols, target_col, org_id):
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    # ─── Train model ─────────────────────────────
-    n_estimators = min(200, max(50, len(X) // 5))
-    model = RandomForestClassifier(
-        n_estimators=n_estimators,
-        max_depth=min(12, max(3, len(feature_cols))),
-        min_samples_split=max(2, len(X) // 100),
-        min_samples_leaf=max(1, len(X) // 200),
-        class_weight="balanced",
-        random_state=42,
-        n_jobs=-1,
-    )
-    model.fit(X_train_scaled, y_train)
+    # ─── Train multiple models & compare ─────────
+    models = {
+        "Random Forest": RandomForestClassifier(
+            n_estimators=min(200, max(50, len(X) // 5)),
+            max_depth=min(12, max(3, len(feature_cols))),
+            class_weight="balanced",
+            random_state=42,
+            n_jobs=-1,
+        ),
+        "Gradient Boosting": GradientBoostingClassifier(
+            n_estimators=100,
+            learning_rate=0.1,
+            max_depth=4,
+            random_state=42
+        ),
+        "Logistic Regression": LogisticRegression(
+            class_weight="balanced",
+            max_iter=1000,
+            random_state=42
+        )
+    }
 
-    # ─── Evaluate ────────────────────────────────
-    y_pred = model.predict(X_test_scaled)
-    y_proba = model.predict_proba(X_test_scaled)[:, 1]
+    comparison = {}
+    best_model_name = None
+    best_model_score = -1.0
+    best_model = None
 
-    accuracy = round(accuracy_score(y_test, y_pred), 4)
-    try:
-        auc = round(roc_auc_score(y_test, y_proba), 4)
-    except ValueError:
-        auc = None  # Single class in test set
+    for name, clf in models.items():
+        clf.fit(X_train_scaled, y_train)
+        y_pred = clf.predict(X_test_scaled)
+        y_proba = clf.predict_proba(X_test_scaled)[:, 1] if hasattr(clf, "predict_proba") else np.zeros(len(y_test))
+        
+        acc = round(accuracy_score(y_test, y_pred), 4)
+        prec = round(precision_score(y_test, y_pred, zero_division=0), 4)
+        rec = round(recall_score(y_test, y_pred, zero_division=0), 4)
+        f1 = round(f1_score(y_test, y_pred, zero_division=0), 4)
+        try:
+            auc = round(roc_auc_score(y_test, y_proba), 4)
+        except ValueError:
+            auc = 0.0
 
+        comparison[name] = {
+            "accuracy": acc,
+            "precision": prec,
+            "recall": rec,
+            "f1": f1,
+            "auc": auc
+        }
+
+        # Compare based on F1-score primarily, or accuracy
+        score_to_compare = f1 if f1 > 0 else acc
+        if score_to_compare > best_model_score:
+            best_model_score = score_to_compare
+            best_model_name = name
+            best_model = clf
+
+    # Evaluate best model
+    y_pred = best_model.predict(X_test_scaled)
     report = classification_report(y_test, y_pred, output_dict=True, zero_division=0)
+    best_metrics = comparison[best_model_name]
 
-    # ─── Feature importance ──────────────────────
-    importances = model.feature_importances_
+    # ─── Feature importance from best model ──────
+    if hasattr(best_model, "feature_importances_"):
+        importances = best_model.feature_importances_
+    elif hasattr(best_model, "coef_"):
+        importances = np.abs(best_model.coef_[0])
+        if importances.sum() > 0:
+            importances = importances / importances.sum()
+    else:
+        importances = np.ones(len(feature_cols)) / len(feature_cols)
+
     feature_importance = sorted(
         [{"feature": name, "importance": round(float(imp), 4)}
          for name, imp in zip(feature_cols, importances)],
         key=lambda x: x["importance"], reverse=True
     )
 
-    # ─── Save artifacts ──────────────────────────
-    joblib.dump(model, os.path.join(model_dir, "model.joblib"))
-    joblib.dump(scaler, os.path.join(model_dir, "scaler.joblib"))
-
-    if label_encoders:
-        joblib.dump(label_encoders, os.path.join(model_dir, "encoders.joblib"))
-
-    # Save metadata
+    # ─── Save versioned artifacts ────────────────
     metadata = {
         "org_id": org_id,
         "feature_cols": feature_cols,
@@ -251,23 +342,46 @@ def train_custom_model(df, feature_cols, target_col, org_id):
         "feature_metadata": feature_metadata,
         "dataset_rows": len(X),
         "dataset_cols": len(feature_cols),
-        "accuracy": accuracy,
-        "auc": auc,
+        "accuracy": best_metrics["accuracy"],
+        "auc": best_metrics["auc"],
+        "best_model_name": best_model_name,
+        "model_comparison": comparison,
         "churn_rate": round(float(churn_rate), 4),
         "feature_importance": feature_importance,
         "trained_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "training_time_sec": round(time.time() - start_time, 2),
     }
 
-    with open(os.path.join(model_dir, "metadata.json"), "w") as f:
-        json.dump(metadata, f, indent=2)
+    version_name = save_model_version(org_id, best_model, scaler, label_encoders, metadata)
 
-    logger.info(f"Custom model trained for org {org_id}: accuracy={accuracy}, auc={auc}")
+    # Log MLOps experiment
+    try:
+        from mlops_tracker import log_experiment
+        log_experiment(
+            org_id=org_id,
+            algorithm=best_model_name,
+            params={
+                "n_estimators": len(best_model.estimators_) if hasattr(best_model, "estimators_") else 100,
+                "max_depth": best_model.max_depth if hasattr(best_model, "max_depth") else None
+            },
+            metrics={
+                "accuracy": best_metrics["accuracy"],
+                "f1": best_metrics["f1"],
+                "auc": best_metrics["auc"]
+            }
+        )
+    except Exception:
+        pass
+
+    logger.info(f"Custom models trained for org {org_id}: best={best_model_name}, version={version_name}")
 
     return {
         "status": "success",
-        "accuracy": accuracy,
-        "auc": auc,
+        "version": version_name,
+        "accuracy": best_metrics["accuracy"],
+        "auc": best_metrics["auc"],
+        "best_model_name": best_model_name,
+        "model_comparison": comparison,
         "total_rows": len(X),
         "features_used": len(feature_cols),
         "churn_rate": round(float(churn_rate) * 100, 1),

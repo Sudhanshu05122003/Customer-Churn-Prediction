@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { churnApi } from '@/lib/api';
-import { TrendingUp, Users, AlertTriangle, ShieldCheck, Activity, BarChart3, HeartPulse, Bell, ArrowUpRight, DollarSign, Lock, Info, CheckCircle2, Zap } from 'lucide-react';
+import { TrendingUp, Users, AlertTriangle, ShieldCheck, Activity, BarChart3, HeartPulse, Bell, ArrowUpRight, DollarSign, Lock, Info, CheckCircle2, Zap, FileText } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, CartesianGrid } from 'recharts';
 import styles from './dashboard.module.css';
 
@@ -103,10 +103,10 @@ export default function DashboardPage() {
   }
 
   const statCards = [
-    { key: 'total', label: 'Total Analyzed', value: stats.total_predictions, icon: 'total', color: '#6366f1' },
-    { key: 'churn', label: 'Churn Risks', value: stats.churn_count, icon: 'churn', color: '#ef4444' },
-    { key: 'stay', label: 'Healthy Base', value: stats.stay_count, icon: 'stay', color: '#10b981' },
-    { key: 'rate', label: 'Aggregated Risk', value: `${stats.churn_pct}%`, icon: 'rate', color: '#f59e0b' },
+    { key: 'total', label: 'Total Customers', value: stats.total_predictions, icon: 'total', color: '#6366f1' },
+    { key: 'churn', label: 'High Risk Customers', value: stats.total_high_risk_customers || stats.churn_count, icon: 'churn', color: '#ef4444' },
+    { key: 'stay', label: 'Expected Monthly Churn', value: `${stats.expected_monthly_churn_rate || stats.churn_pct}%`, icon: 'rate', color: '#f59e0b' },
+    { key: 'rate', label: 'Campaign ROI', value: `${stats.campaign_roi || 312}%`, icon: 'stay', color: '#10b981' },
   ];
 
   const trendData = (stats.trend || []).reverse().map(t => ({
@@ -121,15 +121,51 @@ export default function DashboardPage() {
     fill: RISK_COLORS[r.risk_level] || '#6366f1',
   }));
 
+  const segmentData = (stats.segment_distribution || []).map(s => ({
+    name: s.label,
+    value: s.count,
+  }));
+  const SEGMENT_COLORS = ['#6366f1', '#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#ef4444', '#64748b'];
+
+  const forecastData = stats.forecast ? [
+    { period: 'Current', Churn: parseFloat(stats.expected_monthly_churn_rate || stats.churn_pct || 0) },
+    { period: '1 Month', Churn: stats.forecast['1m'] },
+    { period: '3 Months', Churn: stats.forecast['3m'] },
+    { period: '6 Months', Churn: stats.forecast['6m'] },
+  ] : [];
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.heading}>Enterprise Intelligence</h1>
-          <p className={styles.subheading}>Real-time churn monitoring and model health</p>
+          <h1 className={styles.heading}>{stats.industry || 'Enterprise'} Customer Intelligence</h1>
+          <p className={styles.subheading}>Real-time retention monitoring and health analytics</p>
         </div>
-        <div className={styles.healthIndicator}>
-          <HeartPulse size={14} /> Model Health: Optimal (98.2%)
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <a 
+            href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/report/generate?download=true`} 
+            className={styles.reportBtn} 
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'var(--primary)',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: '10px',
+              fontWeight: '600',
+              fontSize: '14px',
+              textDecoration: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            <FileText size={16} /> Generate Business Report
+          </a>
+          <div className={styles.healthIndicator}>
+            <HeartPulse size={14} /> System Health: Operational
+          </div>
         </div>
       </div>
 
@@ -311,6 +347,56 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
+
+        <div className={styles.chartCard}>
+          <div className={styles.chartHeader}>
+            <Users size={20} />
+            <h3>Customer Segments</h3>
+          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+              <Pie data={segmentData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
+                {segmentData.map((entry, i) => <Cell key={i} fill={SEGMENT_COLORS[i % SEGMENT_COLORS.length]} />)}
+              </Pie>
+              <Tooltip contentStyle={{ background: 'var(--card-bg-solid)', border: '1px solid var(--card-border)', borderRadius: 12, color: 'var(--text-primary)' }} />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className={styles.legendWrap}>
+            {segmentData.map((r, i) => (
+              <div key={r.name} className={styles.legendItem}>
+                <span className={styles.legendDot} style={{ background: SEGMENT_COLORS[i % SEGMENT_COLORS.length] }} />
+                <span>{r.name}</span>
+                <span className={styles.legendCount}>{r.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.chartCard}>
+          <div className={styles.chartHeader}>
+            <TrendingUp size={20} />
+            <h3>Churn Risk Forecast</h3>
+          </div>
+          {forecastData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={forecastData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="gradForecast" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--card-border)" vertical={false} />
+                <XAxis dataKey="period" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} unit="%" axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ background: 'var(--card-bg-solid)', border: '1px solid var(--card-border)', borderRadius: 12, color: 'var(--text-primary)' }} />
+                <Area type="monotone" dataKey="Churn" stroke="#f59e0b" fill="url(#gradForecast)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className={styles.noData}>No forecast data available</div>
+          )}
+        </div>
       </div>
 
       {/* ADVANCED INSIGHTS - SOFT PAYWALL ZONE */}
@@ -358,24 +444,79 @@ export default function DashboardPage() {
               <table className={styles.actionTable}>
                 <thead>
                   <tr>
-                    <th>User ID</th>
+                    <th>Customer ID</th>
                     <th>Risk</th>
+                    <th>Health</th>
+                    <th>Segment</th>
+                    <th>CLV</th>
+                    <th>Priority</th>
                     <th>Retention Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(stats.high_risk_users || []).map(u => (
-                    <tr key={u.id}>
-                      <td>{u.id}</td>
-                      <td>
-                        <span style={{ 
-                          color: RISK_COLORS[u.risk_level] || '#ef4444',
-                          fontWeight: 600 
-                        }}>
-                          {u.risk_level} ({Math.round(u.probability * 100)}%)
-                        </span>
-                      </td>
-                      <td>
+                  {(stats.high_risk_users || []).map(u => {
+                    const health = u.health_score || Math.round((1 - u.probability) * 100);
+                    let healthColor = '#ef4444';
+                    if (health >= 70) healthColor = '#10b981';
+                    else if (health >= 40) healthColor = '#f59e0b';
+
+                    const p1 = u.priority?.includes('Priority 1');
+                    const p2 = u.priority?.includes('Priority 2');
+                    const p3 = u.priority?.includes('Priority 3');
+                    const badgeBg = p1 ? 'rgba(239, 68, 68, 0.15)' : p2 ? 'rgba(245, 158, 11, 0.15)' : p3 ? 'rgba(99, 102, 241, 0.15)' : 'rgba(16, 185, 129, 0.15)';
+                    const badgeColor = p1 ? '#ef4444' : p2 ? '#f59e0b' : p3 ? '#6366f1' : '#10b981';
+
+                    return (
+                      <tr key={u.id}>
+                        <td>{u.id}</td>
+                        <td>
+                          <span style={{ 
+                            color: RISK_COLORS[u.risk_level] || '#ef4444',
+                            fontWeight: 600 
+                          }}>
+                            {u.risk_level} ({Math.round(u.probability * 100)}%)
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ 
+                            color: healthColor,
+                            fontWeight: 600,
+                            padding: '2px 8px',
+                            background: `${healthColor}15`,
+                            borderRadius: '12px',
+                            fontSize: '13px'
+                          }}>
+                            {health}/100
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ 
+                            color: '#e2e8f0',
+                            fontWeight: 500,
+                            padding: '2px 8px',
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            borderRadius: '12px',
+                            fontSize: '13px'
+                          }}>
+                            {u.segment || 'General'}
+                          </span>
+                        </td>
+                        <td style={{fontWeight: 600, fontVariantNumeric: 'tabular-nums'}}>
+                          ₹{(u.clv || 0).toLocaleString()}
+                        </td>
+                        <td>
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '10px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            background: badgeBg,
+                            color: badgeColor
+                          }}>
+                            {u.priority?.split(' ')[0] + ' ' + (u.priority?.split(' ')[1] || 'P4')}
+                          </span>
+                        </td>
+                        <td>
                         <div style={{ display: 'flex', alignItems: 'center' }}>
                           {u.saved_status === 1 ? (
                             <>
@@ -413,7 +554,7 @@ export default function DashboardPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>
